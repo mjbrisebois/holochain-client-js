@@ -10,8 +10,9 @@ const { READY_STATES }			= require('./constants.js');
 const { ...ErrorTypes }			= require('./errors.js');
 const { ConductorError,
 	DeserializationError,
-        DnaReadError,
+	DnaReadError,
 	RibosomeError,
+	RibosomeDeserializeError,
 	ActivateAppError,
 	ZomeCallUnauthorizedError }	= ErrorTypes;
 
@@ -70,7 +71,7 @@ class Connection {
 	    };
 
 	    this._socket.onclose	= ( event ) => {
-		log.debug && this._log("Received 'close' event (code: %s):", event.code );
+		log.debug && this._log("Received 'close' event (code: %s): %s", event.code, event.reason );
 		this._closed		= true;
 		this._close_f( event.code );
 	    };
@@ -97,6 +98,7 @@ class Connection {
 	if ( timeout === undefined )
 	    timeout			= this.options.timeout;
 
+	log.debug && this._log("Closing connection on puprose");
 	this._socket.close( 1000, "I'm done with this socket" );
 
 	return new PromiseTimeout( this._close.then.bind(this._close), timeout, "close WebSocket" );
@@ -156,7 +158,7 @@ class Connection {
 
     async _message_handler ( packed_msg ) {
 	try {
-	    log.debug && this._log("WebSocket message: %s bytes", packed_msg.length );
+	    log.debug && this._log("WebSocket message: %s bytes", packed_msg.byteLength );
 	    let msg			= decode( packed_msg );
 
 	    log.debug && this._log("Message type '%s': { %s }", msg.type, Object.keys(msg).join(", ") );
@@ -206,7 +208,10 @@ class Connection {
 		err			= new DnaReadError( message );
 	    }
 	    else if ( type === "ribosome_error" ) {
-		err			= new RibosomeError( message );
+		if ( message.includes("Wasm error while working with Ribosome: Deserialize") )
+		    err			= new RibosomeDeserializeError( message, request.args );
+		else
+		    err			= new RibosomeError( message );
 	    }
 	    else if ( type === "activate_app" ) {
 		err			= new ActivateAppError( message );
@@ -221,6 +226,7 @@ class Connection {
 
 	    err.stack			= err.stack.split("\n")[0] + "\n" + request.stack;
 
+	    log.debug && this._log("Calling reject for request %s: %s", id, String(err) );
 	    return request.reject( err );
 	}
 	else {

@@ -1,4 +1,6 @@
 
+const { decode }			= require('@msgpack/msgpack');
+
 const { set_tostringtag }		= require('./utils.js');
 
 class CustomError extends Error {
@@ -13,7 +15,7 @@ class CustomError extends Error {
 	    Error.captureStackTrace(this, this.constructor);
 	}
 
-	this.name		= this.constructor.name;
+	this.name			= this.constructor.name;
     }
 
     [Symbol.toPrimitive] ( hint ) {
@@ -58,6 +60,35 @@ set_tostringtag( DnaReadError, "DnaReadError" );
 class RibosomeError extends HolochainClientError {}
 set_tostringtag( RibosomeError, "RibosomeError" );
 
+// RibosomeError( with "Deserialize" in the message ),
+class RibosomeDeserializeError extends HolochainClientError {
+    constructor( message, zome_call_args ) {
+	const match			= message.match(/Deserialize\(\[(?<bytes>.*)\]\)/);
+	const bytes			= new Uint8Array( match.groups.bytes.split(",") );
+	const zome			= zome_call_args.zome_name;
+	const method			= zome_call_args.fn_name;
+
+	if ( bytes.length > 32 ) {
+	    message			= [
+		bytes.slice(0,16).join(", "),
+		"...",
+		`${bytes.length - 32} more bytes`,
+		"...",
+		bytes.slice(16,32).join(", "),
+	    ].join(" ");
+	} else {
+	    message			= bytes.join(", ");
+	}
+
+	super( `Failed to deserialize input for '${zome}->${method}' [ ${message}] ` );
+
+	this.context			= zome_call_args;
+	this.bytes			= bytes;
+	this.data			= decode( bytes );
+    }
+}
+set_tostringtag( RibosomeDeserializeError, "RibosomeDeserializeError" );
+
 // ActivateApp(String),
 class ActivateAppError extends HolochainClientError {}
 set_tostringtag( ActivateAppError, "ActivateAppError" );
@@ -75,6 +106,7 @@ module.exports = {
     DeserializationError,
     DnaReadError,
     RibosomeError,
+    RibosomeDeserializeError,
     ActivateAppError,
     ZomeCallUnauthorizedError,
 };

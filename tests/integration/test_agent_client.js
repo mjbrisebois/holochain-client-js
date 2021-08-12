@@ -20,6 +20,7 @@ const { Connection,
 	DeserializationError,
         DnaReadError,
 	RibosomeError,
+	RibosomeDeserializeError,
 	ActivateAppError,
 	ZomeCallUnauthorizedError,
 	TimeoutError,
@@ -76,9 +77,41 @@ function basic_tests () {
 }
 
 function errors_tests () {
+    let app;
+
+    beforeEach(async () => {
+	log.info("Creating AgentClient for error tests");
+	app				= new AgentClient( agent_hash, {
+	    "memory": dna_hash,
+	}, app_port );
+    });
+
     // non-existent zome
+    it("should fail because non-existent zome", async function () {
+	await expect_reject( async () => {
+	    await app.call("memory", "nonexistent", "oops", {}, 10 );
+	}, TimeoutError, "get response for request 'zome_call'" );
+    });
+
     // non-existent zome function
+    it("should fail because non-existent zome function", async function () {
+	await expect_reject( async () => {
+	    await app.call("memory", "mere_memory", "nonexistent");
+	}, RibosomeError, "zome function that doesn't exist" );
+    });
+
     // zome function invalid input
+    it("should fail because non-existent zome function", async function () {
+	await expect_reject( async () => {
+	    await app.call("memory", "mere_memory", "save_bytes", [ "wrong_input".repeat(4) ] );
+	}, RibosomeDeserializeError, "Failed to deserialize input for 'mere_memory->save_bytes'" );
+    });
+
+    afterEach(async () => {
+	log.info("Closing AgentClient for error tests");
+	await app.close();
+    });
+
     // fail capability check
 }
 
