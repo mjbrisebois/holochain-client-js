@@ -13,9 +13,9 @@ build:			node_modules
 #
 # Testing
 #
-test:			build test-setup
+test:			prepare-package build test-setup
 	npx mocha --recursive ./tests
-test-debug:		build test-setup
+test-debug:		prepare-package build test-setup
 	LOG_LEVEL=silly npx mocha --recursive ./tests
 
 test-unit:		build test-setup
@@ -59,7 +59,9 @@ clean-files-all-force:	clean-remove-chaff
 #
 prepare-package:
 	npm run build
-	gzip -kf dist/*.js
+	gzip -kf dist/holochain-client.bundled.js
+	npm run build-lite
+	gzip -kf dist/holochain-client-lite.bundled.js
 preview-package:	clean-files test prepare-package
 	npm pack --dry-run .
 create-package:		clean-files test prepare-package

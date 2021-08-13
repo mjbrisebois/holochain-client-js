@@ -12,14 +12,14 @@ const { Holochain }			= require('@whi/holochain-backdrop');
 const { HoloHash }			= require('@whi/holo-hash');
 
 const { expect_reject }			= require('./utils.js');
+const { AdminClient }			= require('../../src/index.js');
 const { Connection,
-	AdminClient,
 	AgentClient,
 
 	RibosomeError,
 	RibosomeDeserializeError,
 	TimeoutError,
-	...hc_client }			= require('../../src/index.js');
+	...hc_client }			= require('../../lite.js');
 
 if ( process.env.LOG_LEVEL )
     hc_client.logging();
@@ -110,7 +110,7 @@ function errors_tests () {
     // fail capability check
 }
 
-describe("Integration: Agent Client", () => {
+describe("Integration: Agent Client (Lite)", () => {
 
     before(async () => {
 	conductor			= new Holochain();

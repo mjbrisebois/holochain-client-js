@@ -1,6 +1,4 @@
 
-const { DnaHash }			= require('@whi/holo-hash');
-
 const { log,
 	set_tostringtag }		= require('./utils.js');
 const { ZomeApi }			= require('./zome_api.js');
@@ -44,7 +42,7 @@ set_tostringtag( AppSchema, "AppSchema" );
 
 class DnaSchema {
     constructor ( hash, structure = {} ) {
-	this._hash			= new DnaHash( hash );
+	this._hash			= hash;
 	this._zomes			= {};
 
 	if ( Array.isArray( structure ) ) {
