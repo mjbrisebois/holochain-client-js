@@ -148,7 +148,7 @@ function errors_tests () {
     // Connection: undefined payload for type Request
 }
 
-describe("Connection", () => {
+describe("Integration: Connection", () => {
 
     before(async () => {
 	conductor			= new Holochain();

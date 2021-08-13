@@ -29,6 +29,13 @@ test-integration-debug:		build test-setup
 	LOG_LEVEL=silly npx mocha ./tests/integration
 test-integration-debug-%:	build test-setup
 	LOG_LEVEL=silly npx mocha ./tests/integration/test_$*.js
+
+test-e2e:		prepare-package build test-setup
+	npx mocha ./tests/e2e
+test-e2e-debug:		prepare-package build test-setup
+	LOG_LEVEL=silly npx mocha ./tests/e2e
+test-e2e-debug-%:	prepare-package build test-setup
+	LOG_LEVEL=silly npx mocha ./tests/e2e/test_$*.js
 test-setup:
 
 

@@ -178,7 +178,7 @@ function errors_tests () {
     });
 }
 
-describe("Admin Client", () => {
+describe("Integration: Admin Client", () => {
 
     before(async () => {
 	conductor			= new Holochain();

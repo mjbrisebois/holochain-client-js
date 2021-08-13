@@ -26,7 +26,7 @@ function dna_schema_tests () {
 function errors_tests () {
 }
 
-describe("Holochain Client", () => {
+describe("Unit: Holochain Client", () => {
 
     describe("DNA Schema", dna_schema_tests );
 

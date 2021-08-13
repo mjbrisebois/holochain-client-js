@@ -7,22 +7,11 @@ global.WebSocket			= require('ws');
 
 const why				= require('why-is-node-running');
 const expect				= require('chai').expect;
-const { encode, decode }		= require('@msgpack/msgpack');
 const { Holochain }			= require('@whi/holochain-backdrop');
 const { HoloHash }			= require('@whi/holo-hash');
 
-const { expect_reject }			= require('./utils.js');
-const { Connection,
-	AdminClient,
+const { AdminClient,
 	AgentClient,
-
-	ConductorError,
-	DeserializationError,
-        DnaReadError,
-	RibosomeError,
-	ActivateAppError,
-	ZomeCallUnauthorizedError,
-	TimeoutError,
 	...hc_client }			= require('../../src/index.js');
 
 if ( process.env.LOG_LEVEL )
@@ -33,7 +22,6 @@ const TEST_DNA_PATH			= path.join( __dirname, "../dnas/memory.dna" );
 const TEST_APP_ID			= "test-app";
 
 let conductor;
-let conn;
 let dna_hash;
 let agent_hash;
 let app_port;
@@ -61,7 +49,7 @@ function agent_client_tests () {
 function errors_tests () {
 }
 
-describe("Holochain Client", () => {
+describe("Integration: Holochain Client", () => {
 
     before(async () => {
 	conductor			= new Holochain();

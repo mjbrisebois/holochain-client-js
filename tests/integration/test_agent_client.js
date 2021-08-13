@@ -115,7 +115,7 @@ function errors_tests () {
     // fail capability check
 }
 
-describe("Agent Client", () => {
+describe("Integration: Agent Client", () => {
 
     before(async () => {
 	conductor			= new Holochain();

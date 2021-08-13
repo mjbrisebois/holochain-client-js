@@ -2,30 +2,12 @@
     <head>
     </head>
     <body>
-	<script type="text/javascript" src="../../dist/holochain-client.bundled.js"></script>
+	<script type="text/javascript" src="/dist/holochain-client.bundled.js"></script>
 
 	<script type="text/javascript">
-	  let {
-	      AgentClient,
-	      HoloHash,
-	      logging,
-	  } = HolochainClient;
+	  let { logging } = HolochainClient;
 
 	  logging();
-
-	  (async () => {
-	      const client = new AgentClient( new HoloHash("uhCAkvBG5BisJxgMvsDayVIuJHQwvCfsr2WoxMGpZ+kEgHu+SJRU1"), {
-		  "happs": new HoloHash("uhC0kJ3CRNyl7TPFTOvqm98_ntsQJpRr5ImQJWB5lnhpuqkKJYKzF"),
-	      }, 44001 );
-
-	      console.log( client._app_schema );
-
-	      let happs = await client.call("happs", "happ_library", "get_happs", {
-		  "agent": null,
-	      });
-
-	      console.log( happs );
-	  })().catch(console.error);
 	</script>
     </body>
 </html>
