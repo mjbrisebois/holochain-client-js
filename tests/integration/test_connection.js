@@ -108,9 +108,9 @@ function connection_tests () {
 }
 
 function errors_tests () {
-    it("should fail to connect because ", async function () {
+    it("should fail to connect because invalid connection input", async function () {
 	await expect_reject( async () => {
-	    let conn			= new Connection();
+	    let conn			= new Connection( 83283728 );
 	    try {
 		await conn.open();
 	    } finally {
@@ -119,7 +119,7 @@ function errors_tests () {
 	}, SyntaxError, "Invalid port" );
 
 	await expect_reject( async () => {
-	    let conn			= new Connection( 37287, "localhost" );
+	    let conn			= new Connection( "localhost:37287" );
 	    try {
 		await conn.open();
 	    } finally {
@@ -128,7 +128,7 @@ function errors_tests () {
 	}, Error, "ECONNREFUSED" );
 
 	await expect_reject( async () => {
-	    let conn			= new Connection( 37287, "example.com", {
+	    let conn			= new Connection( "example.com:37287", {
 		"timeout": 100,
 	    });
 	    try {

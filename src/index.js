@@ -20,28 +20,18 @@ const DEFAULT_AGENT_CLIENT_OPTIONS	= {
 };
 
 class AgentClient {
-    constructor ( agent, app_schema, ...args ) {
-	this._options			= Object.assign( {}, DEFAULT_AGENT_CLIENT_OPTIONS );
+    constructor ( agent, app_schema, connection, options ) {
 	this._agent			= agent;
 	this._app_schema		= app_schema instanceof AppSchema
 	    ? app_schema
 	    : new AppSchema( app_schema );
 
-	if ( args[0] instanceof Connection ) {
-	    let [ conn, opts ] = args;
-	    this._conn			= conn;
+	if ( connection instanceof Connection )
+	    this._conn			= connection;
+	else
+	    this._conn			= new Connection( connection );
 
-	    Object.assign( this._options, opts );
-	}
-	else if ( typeof args[0] === "number" ) {
-	    let [ port, host, opts ] = args;
-	    this._conn			= new Connection( port, host );
-
-	    Object.assign( this._options, opts );
-	}
-	else {
-	    throw new TypeError(`Invalid arguments for AgentClient: ${ args.map(a => typeof a) }`)
-	}
+	this._options			= Object.assign( {}, DEFAULT_AGENT_CLIENT_OPTIONS, options );
     }
 
     async call ( dna_nickname, zome, func, payload, timeout ) {

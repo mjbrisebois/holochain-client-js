@@ -17,24 +17,50 @@ const { ConductorError,
 	ZomeCallUnauthorizedError }	= ErrorTypes;
 
 
+const uri_scheme_regexp			= /^[A-Za-z0-9.\-+]+\:\/\//;
+
 const DEFAULT_CONNECTION_OPTIONS	= {
     "timeout": 15_000,
+    "host": "localhost",
+    "secure": false,
 };
 
 let connection_id			= 0;
 
 class Connection {
-    constructor ( port, host = "localhost", options = {} ) {
-	const url			= `ws://${host}:${port}`;
-
-	if ( ! (port > 0 && port < 65_536) )
-	    throw new SyntaxError("Invalid port: ${port}; must be between 1..65536");
-
+    constructor ( address, options = {} ) {
 	this.options			= Object.assign( {}, DEFAULT_CONNECTION_OPTIONS, options );
+
+	const uri_scheme		= this.options.secure === true ? "wss://" : "ws://";
+	// `address` could be
+	//
+	//   1. `<port>` using options.host as host
+	//   2. `"<host>:<port>"`
+	//   3. `"<full address>"`
+	//
+	// Where the scheme will be prepended for 1 and 2 as "ws://"
+	// - or "wss://" if options.secure is true)
+	//
+	if ( typeof address === "number" ) {
+	    if ( ! (address > 0 && address < 65_536) )
+		throw new SyntaxError("Invalid port: ${address}; must be between 1..65536");
+
+	    this._uri			= uri_scheme + `${this.options.host}:${address}`;
+	}
+	else if ( typeof address === "string" ) {
+	    if ( uri_scheme_regexp.test( address ) )
+		this._uri		= address;
+	    else
+		this._uri		= uri_scheme + address;
+	}
+	else
+	    throw new TypeError("Invalid address input: ${typeof address}; expected number or string");
+
+	new URL( this._uri ); // Check if valid URI
+
 	this._conn_id			= connection_id++;
 	this.name			= this.options.name ? `${this._conn_id}:` + this.options.name : String( this._conn_id );
 
-	this._url			= url;
 	this._msg_count			= 0;
 	this._pending			= {};
 	this._socket			= null;
@@ -51,8 +77,8 @@ class Connection {
 	});
 
 	try {
-	    log.debug && this._log("Opening connection to: %s", this._url );
-	    this._socket		= new WebSocket( this._url );
+	    log.debug && this._log("Opening connection to: %s", this._uri );
+	    this._socket		= new WebSocket( this._uri );
 	    this._socket.binaryType	= "arraybuffer";
 
 	    this._socket.onerror	= ( event ) => {
@@ -81,7 +107,7 @@ class Connection {
 	    };
 	} catch (err) {
 	    console.error(err);
-	    r(err);
+	    this._open_r(err);
 	}
 
 	log.debug && this._log("Initialized new Connection()");
@@ -240,7 +266,7 @@ class Connection {
 
     toString () {
 	let ctx				= this._socket ? `[${ READY_STATES[this._socket.readyState] }]` : "[N/A]";
-	return `${ str_eclipse_end( this.name, 8 ) } ${ str_eclipse_start( this._url, 25 ) } ${ ctx.padStart(12) }`;
+	return `${ str_eclipse_end( this.name, 8 ) } ${ str_eclipse_start( this._uri, 25 ) } ${ ctx.padStart(12) }`;
     }
 }
 set_tostringtag( Connection, "Connection" );
