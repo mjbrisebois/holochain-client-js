@@ -43,7 +43,7 @@ class Connection {
 	//
 	if ( typeof address === "number" ) {
 	    if ( ! (address > 0 && address < 65_536) )
-		throw new SyntaxError("Invalid port: ${address}; must be between 1..65536");
+		throw new SyntaxError(`Invalid port: ${address}; must be between 1..65536`);
 
 	    this._uri			= uri_scheme + `${this.options.host}:${address}`;
 	}
@@ -54,7 +54,7 @@ class Connection {
 		this._uri		= uri_scheme + address;
 	}
 	else
-	    throw new TypeError("Invalid address input: ${typeof address}; expected number or string");
+	    throw new TypeError(`Invalid address input: ${typeof address}; expected number or string`);
 
 	new URL( this._uri ); // Check if valid URI
 

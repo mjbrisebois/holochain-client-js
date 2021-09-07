@@ -1,11 +1,7 @@
 
 const { TimeoutError }			= require('@whi/promise-timeout');
-const { HoloHash,
-	HeaderHash,
-	EntryHash,
-	AgentPubKey,
-	DnaHash,
-	base64 }			= require('@whi/holo-hash');
+const HoloHashTypes			= require('@whi/holo-hash');
+const { HoloHash }			= HoloHashTypes;
 
 const { log,
 	set_tostringtag }		= require('./utils.js');
@@ -76,6 +72,7 @@ module.exports = {
     TimeoutError,
 
     HoloHash,
+    HoloHashTypes,
 
     logging () {
 	log.debug			= true;

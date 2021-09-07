@@ -48,7 +48,7 @@ function basic_tests () {
     });
 
     it("should generate agent", async function () {
-	agent_hash			= await admin.generateAgent();;
+	agent_hash			= await admin.generateAgent();
 	log.normal("Agent response: %s", agent_hash );
     });
 

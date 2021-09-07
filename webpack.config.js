@@ -5,6 +5,9 @@ module.exports = {
     target: 'web',
     mode: 'production', // production | development
     entry: [ './src/index.js' ],
+    resolve: {
+	mainFields: ["main"],
+    },
     output: {
 	filename: 'holochain-client.bundled.js',
 	globalObject: 'this',
