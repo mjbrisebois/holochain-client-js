@@ -6,7 +6,7 @@ const { log,
 
 
 class ZomeApi {
-    constructor ( name, methods = [], tranformers = {} ) {
+    constructor ( name, methods = [] ) {
 	this._name			= name;
 	this._methods			= methods;
 	this._timeout;
@@ -14,7 +14,7 @@ class ZomeApi {
 
     async call ( connection, agent, dna, func, payload, timeout ) {
 	if ( this._methods.includes( func ) ) {
-	    // check for transformers
+	    // TODO: implement transformers
 	}
 	else if ( this._methods !== null && this._methods.length !== 0 ) {
 	    throw new Error(`Unknown Zome function: ${func}; expected one of ${ this._methods }`);

@@ -1,7 +1,7 @@
 [![](https://img.shields.io/npm/v/@whi/holochain-client/latest?style=flat-square)](http://npmjs.com/package/@whi/holochain-client)
 
 # Holochain Client
-A Javascript library for communicating with Holochain Conductor APIs.
+A Javascript library for communicating with [Holochain](https://holochain.org) Conductor APIs.
 
 [![](https://img.shields.io/github/issues-raw/mjbrisebois/js-holochain-client?style=flat-square)](https://github.com/mjbrisebois/js-holochain-client/issues)
 [![](https://img.shields.io/github/issues-closed-raw/mjbrisebois/js-holochain-client?style=flat-square)](https://github.com/mjbrisebois/js-holochain-client/issues?q=is%3Aissue+is%3Aclosed)
@@ -9,11 +9,15 @@ A Javascript library for communicating with Holochain Conductor APIs.
 
 
 ## Overview
-This module is intended to provide Javascript classes for...
+This client is guided by the interfaces defined in the [Holochain](https://github.com/holochain/holochain) project.
+
+- Holochain Conductor's [Admin Interface](https://github.com/holochain/holochain/blob/HEAD/crates/holochain_conductor_api/src/admin_interface.rs)
+- Holochain Conductor's [App Interface](https://github.com/holochain/holochain/blob/HEAD/crates/holochain_conductor_api/src/app_interface.rs)
 
 ### Features
 
-- Construct from a 32-byte raw hash
+- a Client for Conductor's app interface
+- a Client for Conductor's admin interface
 
 ## Install
 
@@ -23,77 +27,69 @@ npm i @whi/holochain-client
 
 ## Basic Usage
 
-#### Example of the most straightforward way to call a zome function
+### App Interface
+
+Each example assumes this code is present
+```javascript
+const { HoloHashTypes } = require('@whi/holochain-client');
+const { AgentPubKey, DnaHash } = HoloHashTypes;
+
+const agent_hash = new AgentPubKey("uhCAkXZ1bRsAdulmQ5Tjw5rNJPXXudEVxMvhqEMPZtCyyoeyY68rH");
+const dna_hash = new DnaHash("uhC0kzbVYMh7gso8s-O26hL4PfDTajGqHFkljyL8mdtokzoL-gRdd");
+const app_interface_port = 45678;
+```
+
+#### Example
+
 ```javascript
 const { AgentClient } = require('@whi/holochain-client');
 
 const client = new AgentClient( agent_hash, {
     "memory": dna_hash,
-}, 12345 );
+}, app_interface_port );
 
 await client.call("memory", "mere_memory", "save_bytes", Buffer.from("Hello World") );
 ```
 
-#### Example of using `AgentClient` with designated zomes
+#### Example of using `AgentClient` with defined zomes
+
 ```javascript
-const { AgentClient, DnaSchema } = require('@whi/holochain-client');
+const { AgentClient } = require('@whi/holochain-client');
 
 const client = new AgentClient( agent_hash, {
-    "memory": new DnaSchema( dna_hash, [ "mere_memory" ] ),
-}, 12345 );
+    "memory": [ dna_hash, [ "mere_memory" ] ],
+}, app_interface_port );
 
 await client.call("memory", "mere_memory", "save_bytes", Buffer.from("Hello World") );
 ```
 
-#### Example of using `AgentClient` with designated zomes and functions
+#### Example of using `AgentClient` with defined zomes and functions
+
 ```javascript
-const { AgentClient, DnaSchema } = require('@whi/holochain-client');
+const { AgentClient } = require('@whi/holochain-client');
 
 const client = new AgentClient( agent_hash, {
-    "memory": new DnaSchema( dna_hash, {
-        "mere_memory": [ "save_bytes", "retrieve_bytes" ],
-    }),
-}, 12345 );
-
-await client.call("memory", "mere_memory", "save_bytes", Buffer.from("Hello World") );
-```
-
-#### Example of defining `AppSchema` and then creating an `AgentClient`
-```javascript
-const { AppSchema } = require('@whi/holochain-client');
-
-const app_schema = new AppSchema({
     "memory": [ dna_hash, {
         "mere_memory": [ "save_bytes", "retrieve_bytes" ],
     }],
-});
-
-const client = app_schema.client( agent_hash, 12345 );
+}, app_interface_port );
 
 await client.call("memory", "mere_memory", "save_bytes", Buffer.from("Hello World") );
 ```
+
+### Admin Interface
 
 #### Example
+
 ```javascript
-const { AppSchema } = require('@whi/holochain-client');
+const { AdminClient } = require('@whi/holochain-client');
+const admin_interface_port = 12345;
 
-const schema = new AppSchema({
-    "memory": [ dna_hash, {
-        "mere_memory": {
-            "save_bytes": [ "uint8array" ],
-            "retrieve_bytes": [ "entryhash" ],
-        },
-    }],
-});
+const admin = new AdminClient( admin_interface_port );
 
-schema.dna("memory").zome("mere_memory").transformer("save_bytes", resp => {
-    return new Uint8Array( resp );
-});
-
-const client = await schema.client( agent, 12345 );
-
-await client.call("memory", "mere_memory", "save_bytes", Buffer.from("Hello World") );
+await admin.generateAgent();
 ```
+
 
 ### API Reference
 

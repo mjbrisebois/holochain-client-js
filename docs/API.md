@@ -2,148 +2,120 @@
 
 # API Reference
 
-### Module exports
+Examples assume that the following dependencies are loaded
 ```javascript
-{
-    Connection,
+const {
+    AdminClient,
     AgentClient,
+
+    Connection,
 
     AppSchema,
     DnaSchema,
     ZomeApi,
-}
+
+    HoloHashTypes,
+} = require('@whi/holochain-client');
+const { HoloHash, AgentPubKey, HeaderHash, EntryHash, DnaHash } = HoloHashTypes;
 ```
 
+## [`new AgentClient( ... )`](./API_AgentClient.md)
+A class for communicating with Conductor's App interface with a specific Agent.
 
-## `new Connection( port, host, name )`
+
+## [`new AdminClient( ... )`](./API_AdminClient.md)
+A class for communicating with Conductor's Admin interface.
+
+
+## [`new Connection( ... )`](./API_Connection.md)
 A class for communicating with Holochain Conductor's WebSocket.
 
-- `port` - (*required*) the TCP port for WebSocket connection to Conductor API
-- `host` - (*optional*) the TCP address for WebSocket connection to Conductor API
-  - defaults to `localhost`
-- `name` - (*optional*) a unique name for this Connection instance
-  - defaults to the connection counter
+
+## [`new AppSchema( ... )`](./API_AppSchema.md)
+A class for defining an App's DNA architecture.
 
 
-### `<Connection>.open( timeout ) -> TimeoutPromise<undefined>`
-Wait for the WebSocket to be open.
-
-Returns a Promise that resolves when the WebSocket 'open' event has occurred.
-
-Example
-```javascript
-let conn = new Connection( 12345 );
-
-await conn.open();
-```
+## [`new DnaSchema( ... )`](./API_DnaSchema.md)
+A class for defining a DNA's zome architecture.
 
 
-### `<Connection>.close( timeout ) -> TimeoutPromise<code>`
-Initiate closing the WebSocket and wait for the WebSocket to be closed.
-
-- `timeout` - (*optional*) raise `TimeoutError` after # milliseconds
-  - defaults to `this.options.timeout`
-
-Returns a Promise that resolves with the status code when the WebSocket 'close' event has occurred.
-
-Example
-```javascript
-let conn = new Connection( 12345 );
-
-await conn.open();
-
-await conn.close();
-```
-
-
-### `<Connection>.send( type, payload, id ) -> undefined`
-Send a `Request` type message and a await for the corresponding `Response` message.
-
-- `type` - (*required*) the message type (`Request`, `Response`, `Signal`)
-- `payload` - (*optional*) data corresponding to the message type
-  - defaults to `undefined`
-- `timeout` - (*optional*) raise `TimeoutError` after # milliseconds
-  - defaults to `this.options.timeout`
-
-Returns a Promise that resolves with the status code when the WebSocket 'close' event has occurred.
-
-Example
-```javascript
-let conn = new Connection( 12345 );
-
-await conn.open();
-
-conn.send("Request", {
-    "id": 0,
-    "type": "register_dna",
-    "args": {
-        "path": "/path/to/some.dna",
-    },
-});
-```
-
-
-### `<Connection>.request( method, args, timeout ) -> TimeoutPromise<code>`
-Send a `Request` type message and a await for the corresponding `Response` message.
-
-- `method` - (*required*) the Conductor API method name
-- `args` - (*optional*) input corresponding to the given `method`
-  - defaults to `null`
-- `timeout` - (*optional*) raise `TimeoutError` after # milliseconds
-  - defaults to `this.options.timeout`
-
-Returns a Promise that resolves with the response payload when the corresponding `Response` message is received.
-
-Example
-```javascript
-let conn = new Connection( 12345 );
-
-await conn.open();
-
-let dna_hash = await conn.request("register_dna", {
-    "path": "/path/to/some.dna",
-});
-```
-
-
-
-## `new AppSchema( dnas )`
-A class for 
-
-
-
-## `new DnaSchema( dna_hash )`
-A class for 
-
-
-
-## `new ZomeApi( connection, name, methods, transformers )`
-A class for 
-
-
-
-## `new AgentClient( agent, port, host, dnas )`
-A class for communicating with Conductor's App interface for a specific Agent.
-
-- `port` - (*required*) the TCP port for WebSocket connection to Conductor API
-- `host` - (*optional*) the TCP address for WebSocket connection to Conductor API
-  - defaults to `localhost`
-- `name` - (*optional*) a unique name for this Connection instance
-  - defaults to the connection counter
-
-```javascript
-new AgentClient( agent_hash, 12345 );
-```
+## [`new ZomeApi( ... )`](./API_ZomeApi.md)
+A class for defining and calling a Zome's API interface.
 
 
 
 ## Failure modes
 
-### `ConductorError`
-This error will occur when 
+Error class hierarchy
+
+- `HolochainClientError`
+  - `ConductorError`
+  - `DeserializationError`
+  - `DnaReadError`
+  - `RibosomeError`
+  - `RibosomeDeserializeError`
+  - `ActivateAppError`
+  - `ZomeCallUnauthorizedError`
+
+### `throw new ConductorError( message )`
+This error will occur when Conductor returns an error with type `internal_error`.
 
 Example
+```
+[ConductorError( IO error: ffs::IoError at path './non-existent.dna': No such file or directory (os error 2) )]
+```
+
+### `throw new DeserializationError( message )`
+This error will occur when Conductor returns an error with type `deserialization`.
+
+Example
+```
+[DeserializationError( Deserialize("invalid type: map, expected unit variant AdminRequest::ListActiveApps")) )]
+```
+
+### `throw new DnaReadError( message )`
+This error will occur when Conductor returns an error with type `dna_read_error`.
+
+### `throw new RibosomeError( message )`
+This error will occur when Conductor returns an error with type `ribosome_error`.
+
+### `throw new RibosomeDeserializeError( message, zome_call_args )`
+This error will occur when Conductor returns an error with type `ribosome_error` and the message
+includes `Wasm error while working with Ribosome: Deserialize`.
+
+### `throw new ActivateAppError( message )`
+This error will occur when Conductor returns an error with type `activate_app`.
+
+### `throw new ZomeCallUnauthorizedError( message )`
+This error will occur when Conductor returns an error with type `zome_call_unauthorized`.
+
+
+## Module exports
 ```javascript
-// [ConductorError(  )]
-//     at 
+{
+    AdminClient,
+    AgentClient,
+
+    Connection,
+
+    AppSchema,
+    DnaSchema,
+    ZomeApi,
+
+    HoloHash: require('@whi/holo-hash').HoloHash,
+    HoloHashTypes: require('@whi/holo-hash'),
+
+    // Error classes
+    TimeoutError,
+
+    HolochainClientError,
+
+    ConductorError,
+    DeserializationError,
+    DnaReadError,
+    RibosomeError,
+    RibosomeDeserializeError,
+    ActivateAppError,
+    ZomeCallUnauthorizedError,
+}
 ```

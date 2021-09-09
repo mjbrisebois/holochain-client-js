@@ -92,7 +92,7 @@ function basic_tests () {
     });
 
     it("should list apps", async function () {
-	const apps			= await admin.listApps( admin.APPS_ENABLED );
+	const apps			= await admin.listApps();
 
 	expect( apps			).to.have.length( 1 );
 	expect( apps[0]			).to.equal( TEST_APP_ID );
@@ -141,6 +141,14 @@ function basic_tests () {
 	// log.silly("Cell state dump => %s", json.debug( state ) );
 
 	expect( state.source_chain	).to.have.length.gte( 3 );
+    });
+
+    it("should get agent info", async function () {
+	const agent_info		= await admin.requestAgentInfo([ dna_hash, agent_hash ]);
+
+	// log.silly("Cell agent info => %s", json.debug( agent_info ) );
+
+	expect( agent_info[0].agent	).to.deep.equal( agent_hash );
     });
 }
 

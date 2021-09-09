@@ -3,15 +3,16 @@
 # Contributing
 
 ## Overview
-This package is designed to match Holochain's `holo_hash` crate (https://crates.io/crates/holo_hash)
+This package is designed to work with Holochain's Conductor API interfaces.
 
 ### Class Context Hierarchy
 
-- `new DnaSchema( dna_hash )` - defines DNA and available zomes
-  - `new ZomeApi( _, name, methods, transformers )` - defines Zome and available functions
-  - `new AgentClient( agent, connection )` - manages Zome interactions for a specific Agent
-    - `new Connection( port, host )` - manages transport context.
-- `new AppSchema( dnas )` - manages several `DnaSchema` instances
+- `new AdminClient( ... )` - manages administrative requests
+- `new AgentClient( ... )` - manages Zome interactions for a specific Agent
+  - `new AppSchema( ... )` - defines a set of `DnaSchema` instances
+    - `new DnaSchema( ... )` - defines a set of `ZomeApi` instances
+      - `new ZomeApi( ... )` - manages calling zome functions
+- `new Connection( ... )` - manages transport context.
 
 
 ## Development
@@ -30,10 +31,12 @@ logging(); // show debug logs
 ### Environment
 
 - Developed using Node.js `v14.17.3`
+- Enter `nix-shell` for other development environment dependencies.
 
 ### Building
+No build is required for Node.
 
-Bundled with Webpack
+Bundling with Webpack is supported for web
 ```
 npm run build
 ```

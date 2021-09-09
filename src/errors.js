@@ -38,9 +38,6 @@ class CustomError extends Error {
 }
 set_tostringtag( CustomError );
 
-class Warning extends CustomError {}
-set_tostringtag( Warning, "Warning" );
-
 class HolochainClientError extends CustomError {}
 set_tostringtag( HolochainClientError, "HolochainClientError" );
 
@@ -100,7 +97,6 @@ set_tostringtag( ZomeCallUnauthorizedError, "ZomeCallUnauthorizedError" );
 
 module.exports = {
     HolochainClientError,
-    Warning,
 
     ConductorError,
     DeserializationError,

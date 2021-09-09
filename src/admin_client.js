@@ -12,10 +12,10 @@ const { Connection }			= require('./connection.js');
 
 
 class AdminClient {
-    constructor ( port, host ) {
-	this._conn			= port instanceof Connection
+    constructor ( connection ) {
+	this._conn			= connection instanceof Connection
 	    ? port
-	    : new Connection( port, host, { "name": "admin" });
+	    : new Connection( connection, { "name": "admin" });
     }
 
     async _request ( ...args ) {
@@ -94,19 +94,8 @@ class AdminClient {
 	return cells;
     }
 
-    async listApps ( status = null ) {
-	// Enabled,
-	// Disabled,
-	// Running,
-	// Stopped,
-	// Paused,
-	let payload;
-	if ( this._version === 102 ) {
-	    payload			= {
-		"status_filter": status,
-	    };
-	}
-	const apps			= await this._request("list_active_apps", payload );
+    async listApps () {
+	const apps			= await this._request("list_active_apps");
 
 	log.debug && log("Apps (%s): %s", apps.length, apps.join(", ") );
 	return apps;
@@ -117,6 +106,13 @@ class AdminClient {
 
 	log.debug && log("Interfaces (%s): %s", ifaces.length, ifaces );
 	return ifaces;
+    }
+
+    async listAgents () {
+	const agent_infos			= await this.requestAgentInfo();
+	const cell_agents			= agent_infos.map( info => info.agent );
+
+	return [ ...new Set( cell_agents ) ];
     }
 
     async cellState ( dna_hash, agent_hash ) {
@@ -196,13 +192,6 @@ class AdminClient {
 	delete state.source_chain_dump;
 
 	return state;
-    }
-
-    async listAgents () {
-	const agent_infos			= await this.requestAgentInfo();
-	const cell_agents			= agent_infos.map( info => info.agent );
-
-	return [ ...new Set( cell_agents ) ];
     }
 
     async requestAgentInfo ( cell_id = null ) {
