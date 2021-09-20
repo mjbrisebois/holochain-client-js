@@ -64,9 +64,8 @@ function basic_tests () {
 	log.normal("Installed app '%s'", installation.installed_app_id );
 
 	Object.entries( installation.slots ).forEach( ([nick, slot]) => {
-	    log.silly("  %s => %s (provisioned: %s) - %s clones (limit: %s) ", () => [
+	    log.silly("  %s => %s", () => [
 		nick.padEnd(15), slot.base_cell_id,
-		slot.is_provisioned, slot.clones.length, slot.clone_limit
 	    ]);
 	});
     });
