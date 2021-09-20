@@ -14,6 +14,14 @@ This client is guided by the interfaces defined in the [Holochain](https://githu
 - Holochain Conductor's [Admin Interface](https://github.com/holochain/holochain/blob/HEAD/crates/holochain_conductor_api/src/admin_interface.rs)
 - Holochain Conductor's [App Interface](https://github.com/holochain/holochain/blob/HEAD/crates/holochain_conductor_api/src/app_interface.rs)
 
+
+### Holochain Version Map
+
+| Holochain Version                                                                                  | Commit Date    | Lair Version                                                                                         | Holochain Client Version                                                   |
+|----------------------------------------------------------------------------------------------------|----------------|------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| [`v0.0.100`](https://github.com/holochain/holochain/tree/3bd9181ea35c32993d1550591fd19720b31065f6) | *Apr 20, 2021* | [`v0.0.1-alpha.12`](https://github.com/holochain/lair/tree/a01a40640574d3cfabae33dfe3f861de7bd7a57c) | [`v0.1.1`](https://github.com/mjbrisebois/js-holochain-client/tree/v0.1.1) |
+
+
 ### Features
 
 - a Client for Conductor's app interface

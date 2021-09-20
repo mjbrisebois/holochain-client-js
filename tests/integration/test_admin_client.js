@@ -167,10 +167,9 @@ function errors_tests () {
     });
 
     // install: non-existent DNA hash
-    it("should fail to register because bad path", async function () {
+    it("should fail to install because bad hash", async function () {
 	await expect_reject( async () => {
-	    let bad_hash		= dna_hash.getHash();
-	    bad_hash[0]			= 0;
+	    let bad_hash		= new Uint8Array(32);
 
 	    await admin.installApp( "failed-install", agent_hash, {
 		"bad": bad_hash,
