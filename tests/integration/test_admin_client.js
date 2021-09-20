@@ -194,6 +194,9 @@ describe("Integration: Admin Client", () => {
 	    log.silly("Conductor STDOUT => %s", line );
 	});
 	conductor.on("conductor:stderr", line => {
+	    if ( line.includes("func_translator") )
+		return;
+
 	    log.silly("Conductor STDERR => %s", line );
 	});
 

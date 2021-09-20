@@ -99,12 +99,16 @@ await admin.installApp( "my-app", agent_hash, {
 });
 // {
 //     "installed_app_id": "my-app",
+//     "status": {
+//         "inactive": {
+//             "reason": {
+//                 "never_activated": null
+//             }
+//         }
+//     },
 //     "slots": {
 //         "memory": {
-//             "base_cell_id": [ dna_hash, agent_hash ],
-//             "is_provisioned": true,
-//             "clone_limit": 0,
-//             "clones": []
+//             "cell_id": [ dna_hash, agent_hash ],
 //         }
 //     }
 // }

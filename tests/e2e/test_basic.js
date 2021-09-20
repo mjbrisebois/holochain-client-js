@@ -104,6 +104,9 @@ describe("E2E: Holochain Client", () => {
 	    log.silly("Conductor STDOUT => %s", line );
 	});
 	conductor.on("conductor:stderr", line => {
+	    if ( line.includes("func_translator") )
+		return;
+
 	    log.silly("Conductor STDERR => %s", line );
 	});
 

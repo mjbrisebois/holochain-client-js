@@ -56,12 +56,16 @@ class AdminClient {
 	    }),
 	});
 
-	for ( let slot of Object.values( installation.slots ) ) {
-	    slot.base_cell_id		= [
-		new DnaHash(	 slot.base_cell_id[0] ),
-		new AgentPubKey( slot.base_cell_id[1] ),
-	    ];
+	installation.slots		= {};
+	for ( let slot of Object.values( installation.cell_data ) ) {
+	    installation.slots[slot.cell_nick] = {
+		"cell_id": [
+		    new DnaHash(	slot.cell_id[0] ),
+		    new AgentPubKey(	slot.cell_id[1] ),
+		],
+	    };
 	}
+	delete installation.cell_data;
 
 	return installation;
     }
