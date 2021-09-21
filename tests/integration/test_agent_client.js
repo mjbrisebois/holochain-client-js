@@ -139,7 +139,7 @@ describe("Integration: Agent Client", () => {
 	let installation		= await admin.installApp( TEST_APP_ID, agent_hash, {
 	    "memory": dna_hash,
 	});
-	await admin.activateApp( TEST_APP_ID );
+	await admin.enableApp( TEST_APP_ID );
 
 	let app_iface			= await admin.attachAppInterface();
 	app_port			= app_iface.port;

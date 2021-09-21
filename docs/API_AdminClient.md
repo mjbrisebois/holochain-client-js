@@ -15,6 +15,15 @@ Example
 const admin = new AdminClient( 12345 );
 ```
 
+#### Static Properties
+
+Status filters for `listApps()`
+- `APPS_ENABLED` - get apps with status `Enabled`
+- `APPS_DISABLED` - get apps with status `Disabled`
+- `APPS_RUNNING` - get apps with status `Running`
+- `APPS_STOPPED` - get apps with status `Stopped`
+- `APPS_PAUSED` - get apps with status `Paused`
+
 
 ### `<AdminClient>.attachAppInterface( port ) -> Promise<object>`
 Open a port where the Conductor's App Interface will listen for requests.
@@ -37,6 +46,19 @@ await admin.attachAppInterface( 45678 );
 // {
 //     "port": 45678
 // }
+```
+
+
+### `<AdminClient>.addAdminInterface( port ) -> Promise<undefined>`
+Open a port where the Conductor's Admin Interface will listen for requests.
+
+- `port` - (*required*) the TCP port
+
+Returns a Promise that resolves when complete.
+
+Example
+```javascript
+await admin.addAdminInterface( 58765 );
 ```
 
 
@@ -115,16 +137,93 @@ await admin.installApp( "my-app", agent_hash, {
 ```
 
 
-### `<AdminClient>.activateApp( app_id ) -> Promise<undefined>`
+### [deprecated] `<AdminClient>.activateApp( app_id ) -> Promise<undefined>`
 Activate an installed App.
 
-- `app_id` - (*optional*) an installed App ID
+- `app_id` - (*required*) an installed App ID
 
 Returns a Promise that resolves when complete.
 
 Example
 ```javascript
 await admin.activateApp( "my-app" );
+```
+
+
+### `<AdminClient>.enableApp( app_id ) -> Promise<object>`
+Enable an installed App.
+
+- `app_id` - (*required*) an installed App ID
+
+Returns a Promise that resolves with the an object containing app info and a cell error list.
+
+Example
+```javascript
+await admin.enableApp( "my-app" );
+// {
+//     "app": {
+//         "installed_app_id": "my-app",
+//         "status": {
+//             "running": null
+//         },
+//         "slots": {
+//             "memory": {
+//                 "cell_id": [
+//                     DnaHash(39) [ 132,  45,  36, ... ],
+//                     AgentPubKey(39) [ 132,  32,  36, ... ]
+//                 ]
+//             }
+//         }
+//     },
+//     "errors": []
+// }
+```
+
+
+### `<AdminClient>.disableApp( app_id ) -> Promise<undefined>`
+Disable an installed App.
+
+- `app_id` - (*required*) an installed App ID
+
+Returns a Promise that resolves when complete.
+
+Example
+```javascript
+await admin.disableApp( "my-app" );
+```
+
+
+### `<AdminClient>.startApp( app_id ) -> Promise<bool>`
+Disable an installed App.
+
+- `app_id` - (*required*) an installed App ID
+
+Returns a Promise that resolves with a boolean success indicator.
+
+Example
+```javascript
+await admin.disableApp( "my-app" );
+```
+
+
+### `<AdminClient>.createCloneCell( app_id, slot_id, dna_hash, agent_pubkey, options ) -> Promise<object>`
+Disable an installed App.
+
+- `app_id` - (*required*) an installed App ID
+- `slot_id` - (*required*) an installed App's slot ID
+- `dna_hash` - (*required*) a DNA hash
+- `agent_pubkey` - (*required*) an Agent hash
+- `options` - optional input
+  - `options.properties` - object containing cell properties
+    - defaults to `null`
+  - `options.membrane_proof` - proof, if required by the DNA
+    - defaults to `null`
+
+Returns a Promise that resolves with the cell ID.
+
+Example
+```javascript
+await admin.createCloneCell( "my-app", "memory", dna_hash, agent_pubkey );
 ```
 
 
@@ -177,17 +276,35 @@ await admin.listCells();
 ```
 
 
-### `<AdminClient>.listApps() -> Promise<array<string>>`
+### `<AdminClient>.listApps( status ) -> Promise<array<string>>`
 Get the list of installed Apps.
 
-Returns a Promise that resolves with the list of app IDs
+- `status` - (*optional*) filter by app status (see [static properties](#static-properties) for options)
+  - defaults to `APPS_RUNNING`
+
+Returns a Promise that resolves with the list of app info objects
 
 Example
 ```javascript
 await admin.listApps();
 // [
-//     "my-app",
+//     {
+//         "installed_app_id": "my-app",
+//         "status": {
+//             "running": null
+//         },
+//         "slots": {
+//             "memory": {
+//                 "cell_id": [ dna_hash, agent_hash ],
+//             }
+//         }
+//     }
 // ]
+```
+
+Example of filtering
+```javascript
+await admin.listApps( admin.constructor.APPS_DISABLED );
 ```
 
 

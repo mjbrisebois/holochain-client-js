@@ -47,6 +47,11 @@ function basic_tests () {
 	app_port			= resp.port;
     });
 
+    it("should add admin interface", async function () {
+	let resp			= await admin.addAdminInterface( 58_765 );
+	log.info("Add Admin Interface response: %s", resp );
+    });
+
     it("should generate agent", async function () {
 	agent_hash			= await admin.generateAgent();
 	log.normal("Agent response: %s", agent_hash );
@@ -70,9 +75,15 @@ function basic_tests () {
 	});
     });
 
-    it("should activate app", async function () {
-	await admin.activateApp( TEST_APP_ID );
-	log.normal("Activated app");
+    it("should enable app", async function () {
+	const resp			= await admin.enableApp( TEST_APP_ID );
+
+	log.normal("Enabled app: %s", resp );
+    });
+
+    it("should start app", async function () {
+	const resp			= await admin.startApp( TEST_APP_ID );
+	log.normal("Started app: %s", resp );
     });
 
     it("should list DNAs", async function () {
@@ -93,8 +104,32 @@ function basic_tests () {
     it("should list apps", async function () {
 	const apps			= await admin.listApps();
 
-	expect( apps			).to.have.length( 1 );
-	expect( apps[0]			).to.equal( TEST_APP_ID );
+	expect( apps				).to.have.length( 1 );
+	expect( apps[0].installed_app_id	).to.equal( TEST_APP_ID );
+
+	{
+	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_ENABLED );
+
+	    expect( filtered_apps	).to.have.length( 1 );
+	}
+
+	{
+	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_DISABLED );
+
+	    expect( filtered_apps	).to.have.length( 0 );
+	}
+
+	{
+	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_STOPPED );
+
+	    expect( filtered_apps	).to.have.length( 0 );
+	}
+
+	{
+	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_PAUSED );
+
+	    expect( filtered_apps	).to.have.length( 0 );
+	}
     });
 
     it("should list app interfaces", async function () {
@@ -149,6 +184,57 @@ function basic_tests () {
 
 	expect( agent_info[0].agent	).to.deep.equal( agent_hash );
     });
+
+    it("should fail to clone cell because clone limit", async function () {
+	await expect_reject( async () => {
+	    const cell_id		= await admin.createCloneCell(
+		TEST_APP_ID, "memory", dna_hash, agent_hash
+	    );
+
+	    expect( cell_id[0]		).to.not.deep.equal( dna_hash );
+	    expect( cell_id[1]		).to.deep.equal( agent_hash );
+	}, ConductorError, "CloneLimitExceeded" );
+    });
+
+    it("should disable app", async function () {
+	const resp			= await admin.disableApp( TEST_APP_ID );
+	log.normal("Disabled app: %s", resp );
+    });
+
+    it("should list apps after", async function () {
+	const apps			= await admin.listApps();
+
+	expect( apps				).to.have.length( 0 );
+
+	{
+	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_ENABLED );
+
+	    expect( filtered_apps	).to.have.length( 0 );
+	}
+
+	{
+	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_DISABLED );
+
+	    expect( filtered_apps	).to.have.length( 1 );
+	}
+
+	{
+	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_STOPPED );
+
+	    expect( filtered_apps	).to.have.length( 1 );
+	}
+
+	{
+	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_PAUSED );
+
+	    expect( filtered_apps	).to.have.length( 0 );
+	}
+    });
+
+    it("should uninstall app", async function () {
+	const resp			= await admin.uninstallApp( TEST_APP_ID );
+	log.normal("Uninstalled app: %s", resp );
+    });
 }
 
 function errors_tests () {
@@ -156,6 +242,12 @@ function errors_tests () {
 	await expect_reject( async () => {
 	    await admin.attachAppInterface( 1 );
 	}, ConductorError, "Permission denied" );
+    });
+
+    it("should fail to add admin interface", async function () {
+	await expect_reject( async () => {
+	    await admin.addAdminInterface( app_port );
+	}, ConductorError, "Address already in us" );
     });
 
     // register: non-existent DNA path
@@ -177,9 +269,9 @@ function errors_tests () {
     });
 
     // activate: non-existent app ID
-    it("should fail to activate because invalid app ID", async function () {
+    it("should fail to enable because invalid app ID", async function () {
 	await expect_reject( async () => {
-	    await admin.activateApp( "invalid-app-id" );
+	    await admin.enableApp( "invalid-app-id" );
 	}, ConductorError, "AppNotInstalled" );
     });
 }

@@ -8,10 +8,57 @@ const { HoloHash,
 
 const { log,
 	set_tostringtag }		= require('./utils.js');
+const { DeprecationNotice }		= require('./errors.js');
 const { Connection }			= require('./connection.js');
 
 
+function deprecation_notice ( msg ) {
+    const err				= new DeprecationNotice( msg );
+    console.error( err );
+}
+
+function reformat_app_info ( app_info ) {
+    log.debug && log("Reformatting app info: %s", app_info.installed_app_id );
+
+    app_info.slots			= {};
+    for ( let slot of Object.values( app_info.cell_data ) ) {
+	app_info.slots[slot.cell_nick] = {
+	    "cell_id": reformat_cell_id( slot.cell_id ),
+	};
+    }
+    delete app_info.cell_data;
+
+    return app_info;
+}
+
+function reformat_cell_id ( cell_id ) {
+    return [
+	new DnaHash(	 cell_id[0] ),
+	new AgentPubKey( cell_id[1] ),
+    ];
+}
+
+function reformat_cell_errors ( cell_errors ) {
+    log.debug && log("Reformatting cell %s errors", cell_errors.length );
+
+    for ( let i in cell_errors ) {
+	let [ cell_id, error ]		= cell_errors[i];
+	cell_errors[i]			= {
+	    "cell_id": reformat_cell_id( cell_id ),
+	    "error": error,
+	}
+    }
+
+    return cell_errors;
+}
+
 class AdminClient {
+    static APPS_ENABLED			= "Enabled";
+    static APPS_DISABLED		= "Disabled";
+    static APPS_RUNNING			= "Running";
+    static APPS_STOPPED			= "Stopped";
+    static APPS_PAUSED			= "Paused";
+
     constructor ( connection ) {
 	this._conn			= connection instanceof Connection
 	    ? port
@@ -31,6 +78,22 @@ class AdminClient {
 	let resp			= await this._request("attach_app_interface", {
 	    "port": port,
 	});
+	return resp;
+    }
+
+    async addAdminInterface ( port ) {
+	return await this.addAdminInterfaces( port );
+    }
+
+    async addAdminInterfaces ( ...ports ) {
+	let resp			= await this._request("add_admin_interfaces", ports.map( port => {
+	    return {
+		"driver": {
+		    "type": "websocket",
+		    "port": port,
+		},
+	    };
+	}) );
 	return resp;
     }
 
@@ -56,24 +119,56 @@ class AdminClient {
 	    }),
 	});
 
-	installation.slots		= {};
-	for ( let slot of Object.values( installation.cell_data ) ) {
-	    installation.slots[slot.cell_nick] = {
-		"cell_id": [
-		    new DnaHash(	slot.cell_id[0] ),
-		    new AgentPubKey(	slot.cell_id[1] ),
-		],
-	    };
-	}
-	delete installation.cell_data;
-
-	return installation;
+	return reformat_app_info( installation );
     }
 
-    async activateApp ( app_id ) {
+    async uninstallApp ( app_id ) { // -> undefined (expected)
+	return await this._request("uninstall_app", {
+	    "installed_app_id": app_id,
+	});
+    }
+
+    async activateApp ( app_id ) { // -> undefined (on purpose for legacy support and to promote 'enableApp'
+	deprecation_notice("Holochain admin interface 'activateApp()' is deprecated; use 'enableApp()' instead");
+
 	return await this._request("activate_app", {
 	    "installed_app_id": app_id,
 	});
+    }
+
+    async enableApp ( app_id ) {
+	let resp			= await this._request("enable_app", {
+	    "installed_app_id": app_id,
+	});
+
+	resp.app			= reformat_app_info( resp.app );
+	resp.errors			= reformat_cell_errors( resp.errors );
+
+	return resp;
+    }
+
+    async disableApp ( app_id ) { // -> undefined (expected)
+	return await this._request("disable_app", {
+	    "installed_app_id": app_id,
+	});
+    }
+
+    async startApp ( app_id ) { // -> bool
+	return await this._request("start_app", {
+	    "installed_app_id": app_id,
+	});
+    }
+
+    async createCloneCell ( app_id, slot_id, dna_hash, agent_pubkey, options = {} ) { // -> bool
+	let cell_id			= await this._request("create_clone_cell", {
+	    "installed_app_id":	app_id,
+	    "slot_id":		slot_id,
+	    "dna_hash":		dna_hash,
+	    "agent_key":	agent_pubkey,
+	    "properties":	options.properties || null,
+	    "membrane_proof":	options.membrane_proof || null,
+	});
+	return reformat_cell_id( cell_id );
     }
 
     async listDnas () {
@@ -98,11 +193,20 @@ class AdminClient {
 	return cells;
     }
 
-    async listApps () {
-	const apps			= await this._request("list_active_apps");
+    async listApps ( status = "Running" ) { // Holochain's default is 'Running'
+	// Enabled,
+	// Disabled,
+	// Running,
+	// Stopped,
+	// Paused,
+	const apps			= await this._request("list_apps", {
+	    "status_filter": {
+		[status]: null,
+	    },
+	});
 
-	log.debug && log("Apps (%s): %s", apps.length, apps.join(", ") );
-	return apps;
+	log.debug && log("Apps (%s): %s", apps.length, apps.map( x => x.installed_app_id ).join(", ") );
+	return apps.map( reformat_app_info );
     }
 
     async listAppInterfaces () {

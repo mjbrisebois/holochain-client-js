@@ -16,12 +16,7 @@ const { Connection,
 	AdminClient,
 	AgentClient,
 
-	ConductorError,
 	DeserializationError,
-        DnaReadError,
-	RibosomeError,
-	ActivateAppError,
-	ZomeCallUnauthorizedError,
 	TimeoutError,
 	...hc_client }			= require('../../src/index.js');
 
@@ -78,10 +73,10 @@ function connection_tests () {
 	    ]);
 	}
 
-	await conn.request("activate_app", {
+	await conn.request("enable_app", {
 	    "installed_app_id": TEST_APP_ID,
 	});
-	log.normal("Activated app");
+	log.normal("Enable app");
     });
 
     it("should call zome function via app interface", async function () {
