@@ -17,7 +17,7 @@ This client is guided by the interfaces defined in the [Holochain](https://githu
 
 ### Holochain Version Map
 For information on which versions of this package work for each Holochain release, see
-[docs/HolochainVersionMap.md](docs/HolochainVersionMap.md)
+[docs/Holochain_Version_Map.md](docs/Holochain_Version_Map.md)
 
 
 ### Features

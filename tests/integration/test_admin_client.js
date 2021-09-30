@@ -61,12 +61,6 @@ function basic_tests () {
     it("should register DNA", async function () {
 	dna_hash			= await admin.registerDna( TEST_DNA_PATH );
 	log.normal("Register response: %s", dna_hash );
-
-	let diff_hash			= await admin.registerDna( dna_hash, {
-	    "uid": "different",
-	});
-
-	expect( diff_hash		).to.not.deep.equal( dna_hash );
     });
 
     it("should install app", async function () {
@@ -107,8 +101,17 @@ function basic_tests () {
     it("should list DNAs", async function () {
 	const dnas			= await admin.listDnas();
 
-	expect( dnas			).to.have.length( 2 );
+	expect( dnas			).to.have.length( 1 );
 	expect( dnas[0]			).to.deep.equal( dna_hash );
+    });
+
+    it("should register DNA using existing DNA hash", async function () {
+	let diff_hash			= await admin.registerDna( dna_hash, {
+	    "uid": "different",
+	});
+	log.normal("Register response: %s", diff_hash );
+
+	expect( diff_hash		).to.not.deep.equal( dna_hash );
     });
 
     it("should list cells", async function () {
