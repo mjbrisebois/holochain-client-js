@@ -1,6 +1,6 @@
 {
   "name": "@whi/holochain-client",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "A Javascript client for communicating with Holochain Conductor APIs",
   "main": "src/index.js",
   "browser": "dist/holochain-client.bundled.js",
