@@ -30,7 +30,8 @@ if ( process.env.LOG_LEVEL )
     hc_client.logging();
 
 
-const TEST_DNA_PATH			= path.join( __dirname, "../dnas/memory.dna" );
+const TEST_DNA_PATH			= path.join( __dirname, "../packs/memory.dna" );
+const TEST_HAPP_PATH			= path.join( __dirname, "../packs/storage.happ" );
 const TEST_APP_ID			= "test-app";
 
 let conductor;
@@ -60,17 +61,34 @@ function basic_tests () {
     it("should register DNA", async function () {
 	dna_hash			= await admin.registerDna( TEST_DNA_PATH );
 	log.normal("Register response: %s", dna_hash );
+
+	let diff_hash			= await admin.registerDna( dna_hash, {
+	    "uid": "different",
+	});
+
+	expect( diff_hash		).to.not.deep.equal( dna_hash );
     });
 
     it("should install app", async function () {
 	let installation		= await admin.installApp( TEST_APP_ID, agent_hash, {
 	    "memory": dna_hash,
 	});
-	log.normal("Installed app '%s'", installation.installed_app_id );
+	log.normal("Installed app '%s' [state: %s]", installation.installed_app_id, installation.status );
 
 	Object.entries( installation.slots ).forEach( ([nick, slot]) => {
 	    log.silly("  %s => %s", () => [
-		nick.padEnd(15), slot.base_cell_id,
+		nick.padEnd(15), slot.cell_id,
+	    ]);
+	});
+    });
+
+    it("should install app bundle", async function () {
+	let installation		= await admin.installAppBundle( `${TEST_APP_ID}-bundle`, agent_hash, TEST_HAPP_PATH );
+	log.normal("Installed app '%s' [state: %s]", installation.installed_app_id, installation.status );
+
+	Object.entries( installation.slots ).forEach( ([nick, slot]) => {
+	    log.silly("  %s => %s", () => [
+		nick.padEnd(15), slot.cell_id,
 	    ]);
 	});
     });
@@ -89,7 +107,7 @@ function basic_tests () {
     it("should list DNAs", async function () {
 	const dnas			= await admin.listDnas();
 
-	expect( dnas			).to.have.length( 1 );
+	expect( dnas			).to.have.length( 2 );
 	expect( dnas[0]			).to.deep.equal( dna_hash );
     });
 
@@ -116,13 +134,13 @@ function basic_tests () {
 	{
 	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_DISABLED );
 
-	    expect( filtered_apps	).to.have.length( 0 );
+	    expect( filtered_apps	).to.have.length( 1 );
 	}
 
 	{
 	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_STOPPED );
 
-	    expect( filtered_apps	).to.have.length( 0 );
+	    expect( filtered_apps	).to.have.length( 1 );
 	}
 
 	{
@@ -215,13 +233,13 @@ function basic_tests () {
 	{
 	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_DISABLED );
 
-	    expect( filtered_apps	).to.have.length( 1 );
+	    expect( filtered_apps	).to.have.length( 2 );
 	}
 
 	{
 	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_STOPPED );
 
-	    expect( filtered_apps	).to.have.length( 1 );
+	    expect( filtered_apps	).to.have.length( 2 );
 	}
 
 	{

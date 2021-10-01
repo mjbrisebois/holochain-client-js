@@ -80,10 +80,15 @@ await admin.generateAgent();
 ```
 
 
-### `<AdminClient>.registerDna( path ) -> Promise<DnaHash>`
+### `<AdminClient>.registerDna( path, options ) -> Promise<DnaHash>`
 Register a DNA package.
 
-- `path` - (*required*) file path to DNA package
+- `path` - (*required*) file path or `DnaHash` for a DNA package
+- `options` - optional input
+  - `options.properties` - object containing cell properties
+    - defaults to `null`
+  - `options.uid` - override UID in the DNA bundle manifest
+    - defaults to `null`
 
 Returns a Promise that resolves with the `DnaHash`
 
@@ -103,7 +108,8 @@ await admin.registerDna("./mere_memory.dna");
 ### `<AdminClient>.installApp( app_id, agent_hash, dnas ) -> Promise<object>`
 Create a new App installation for the given Agent using the given DNAs.
 
-- `app_id` - (*required*) specify a unique ID for this installed App
+- `app_id` - (*optional*) specify a unique ID for this installed App
+  - defaults to `null`
 - `agent_hash` - (*required*) a 39 byte `Uint8Array` that is an `AgentPubKey`
 - `dnas` - (*required*) an object of key/values that correspond to
   - `key` - a DNA nickname for this DNA
@@ -120,11 +126,50 @@ await admin.installApp( "my-app", agent_hash, {
     "memory": dna_hash,
 });
 // {
+//     "installed_app_id": "my-app-bundle",
+//     "status": {
+//         "disabled": {
+//             "reason": {
+//                 "never_started": null
+//             }
+//         }
+//     },
+//     "slots": {
+//         "memory": {
+//             "cell_id": [ dna_hash, agent_hash ],
+//         }
+//     }
+// }
+```
+
+
+### `<AdminClient>.installAppBundle( app_id, agent_hash, path, options ) -> Promise<object>`
+Create a new App installation for the given Agent using the given DNAs.
+
+- `app_id` - (*optional*) specify a unique ID for this installed App
+  - defaults to `null`
+- `agent_hash` - (*required*) a 39 byte `Uint8Array` that is an `AgentPubKey`
+- `path` - (*required*) file path for a app package
+- `options` - optional input
+  - `options.membrane_proof` - an object of key/values that correspond to
+      - `key` - a DNA nickname matching one in the app manifest
+      - `value` - proof, if required by the DNA
+  - `options.uid` - override UID in the DNA bundle manifest
+    - defaults to `null`
+
+Returns a Promise that resolves with the installation details
+
+Example
+```javascript
+const agent_hash = new HoloHash("uhCAkXZ1bRsAdulmQ5Tjw5rNJPXXudEVxMvhqEMPZtCyyoeyY68rH");
+
+await admin.installAppBundle( "my-app-bundle", agent_hash, "./memory.happ" );
+// {
 //     "installed_app_id": "my-app",
 //     "status": {
-//         "inactive": {
+//         "disabled": {
 //             "reason": {
-//                 "never_activated": null
+//                 "never_started": null
 //             }
 //         }
 //     },

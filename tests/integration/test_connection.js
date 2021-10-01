@@ -24,7 +24,7 @@ if ( process.env.LOG_LEVEL )
     hc_client.logging();
 
 
-const TEST_DNA_PATH			= path.join( __dirname, "../dnas/memory.dna" );
+const TEST_DNA_PATH			= path.join( __dirname, "../packs/memory.dna" );
 const TEST_APP_ID			= "test-app";
 
 let conductor;

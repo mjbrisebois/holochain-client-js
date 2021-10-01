@@ -101,13 +101,26 @@ class AdminClient {
 	return new AgentPubKey( await this._request("generate_agent_pub_key") );
     }
 
-    async registerDna ( path ) {
-	return new DnaHash( await this._request("register_dna", {
-	    "path": path,
-	}) );
+    async registerDna ( path, options ) {
+	options				= Object.assign( {}, {
+	    "properties": null,
+	    "uid": null, // overrite bundle DNAs
+	}, options );
+
+	let input			= {
+	    "properties": options.properties,
+	    "uid": options.uid,
+	};
+
+	if ( path instanceof HoloHash )
+	    input.hash			= path;
+	else
+	    input.path			= path;
+
+	return new DnaHash( await this._request("register_dna", input ) );
     }
 
-    async installApp ( app_id, agent_hash, dnas ) {
+    async installApp ( app_id = null, agent_hash, dnas ) {
 	let installation		= await this._request("install_app", {
 	    "installed_app_id": app_id,
 	    "agent_key": new AgentPubKey(agent_hash),
@@ -117,6 +130,23 @@ class AdminClient {
 		    "nick": dna_nick,
 		};
 	    }),
+	});
+
+	return reformat_app_info( installation );
+    }
+
+    async installAppBundle ( app_id = null, agent_hash, path, options ) {
+	options				= Object.assign( {}, {
+	    "membrane_proofs": {},
+	    "uid": null, // overrite bundle DNAs
+	}, options );
+
+	let installation		= await this._request("install_app_bundle", {
+	    "installed_app_id": app_id,
+	    "path": path,
+	    "agent_key": new AgentPubKey(agent_hash),
+	    "membrane_proofs": options.membrane_proofs,
+	    "uid": options.uid,
 	});
 
 	return reformat_app_info( installation );
