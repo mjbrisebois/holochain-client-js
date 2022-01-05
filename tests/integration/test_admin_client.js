@@ -69,9 +69,9 @@ function basic_tests () {
 	});
 	log.normal("Installed app '%s' [state: %s]", installation.installed_app_id, installation.status );
 
-	Object.entries( installation.slots ).forEach( ([nick, slot]) => {
+	Object.entries( installation.slots ).forEach( ([role_id, slot]) => {
 	    log.silly("  %s => %s", () => [
-		nick.padEnd(15), slot.cell_id,
+		role_id.padEnd(15), slot.cell_id,
 	    ]);
 	});
     });
@@ -80,9 +80,9 @@ function basic_tests () {
 	let installation		= await admin.installAppBundle( `${TEST_APP_ID}-bundle`, agent_hash, TEST_HAPP_PATH );
 	log.normal("Installed app '%s' [state: %s]", installation.installed_app_id, installation.status );
 
-	Object.entries( installation.slots ).forEach( ([nick, slot]) => {
+	Object.entries( installation.slots ).forEach( ([role_id, slot]) => {
 	    log.silly("  %s => %s", () => [
-		nick.padEnd(15), slot.cell_id,
+		role_id.padEnd(15), slot.cell_id,
 	    ]);
 	});
     });

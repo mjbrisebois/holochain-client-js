@@ -112,7 +112,7 @@ Create a new App installation for the given Agent using the given DNAs.
   - defaults to `null`
 - `agent_hash` - (*required*) a 39 byte `Uint8Array` that is an `AgentPubKey`
 - `dnas` - (*required*) an object of key/values that correspond to
-  - `key` - a DNA nickname for this DNA
+  - `key` - a DNA role ID for this DNA
   - `value` - a 39 byte `Uint8Array` that is a registered `DnaHash`
 
 Returns a Promise that resolves with the installation details
@@ -152,7 +152,7 @@ Create a new App installation for the given Agent using the given DNAs.
 - `path` - (*required*) file path for a app package
 - `options` - optional input
   - `options.membrane_proof` - an object of key/values that correspond to
-      - `key` - a DNA nickname matching one in the app manifest
+      - `key` - a DNA role ID matching one in the app manifest
       - `value` - proof, if required by the DNA
   - `options.uid` - override UID in the DNA bundle manifest
     - defaults to `null`

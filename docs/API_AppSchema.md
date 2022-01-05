@@ -7,7 +7,7 @@
 A class for defining an App's DNA architecture.
 
 - `structure` - (*required*) an object of key/values that correspond to
-  - `key` - a DNA nickname for this DNA
+  - `key` - a DNA role ID for this DNA
   - `value` - either
     - a 39 byte `Uint8Array` that is a registered `DnaHash`
     - or, an instance of `DnaSchema`
@@ -62,10 +62,10 @@ await client.call("memory", "mere_memory", "save_bytes", Buffer.from("Hello Worl
 ```
 
 
-### `<AppSchema>.dna( nickname ) -> DnaSchema`
+### `<AppSchema>.dna( role_id ) -> DnaSchema`
 Get a defined instance of `DnaSchema`.
 
-- `nickname` - (*required*) the DNA nickname matching one in this `AppSchema`
+- `role_id` - (*required*) the DNA role ID matching one in this `AppSchema`
 
 Returns an instance of [DnaSchema](./API_DnaSchema.md)
 

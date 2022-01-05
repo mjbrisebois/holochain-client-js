@@ -58,15 +58,15 @@ function connection_tests () {
 	    "dnas": [
 		{
 		    "hash": dna_hash,
-		    "nick": "memory",
+		    "role_id": "memory",
 		}
 	    ],
 	});
 	log.normal("Installed app '%s'", installation.installed_app_id );
-	for ( let dna_nick in installation.slots ) {
-	    let slot			= installation.slots[dna_nick];
+	for ( let role_id in installation.slots ) {
+	    let slot			= installation.slots[role_id];
 	    log.silly("  - %s [ %s::%s ] (provisioned: %s) - %s clones (limit: %s) ", () => [
-		dna_nick,
+		role_id,
 		new HoloHash( slot.base_cell_id[0] ),
 		new HoloHash( slot.base_cell_id[1] ),
 		slot.is_provisioned, slot.clones.length, slot.clone_limit

@@ -30,13 +30,13 @@ class AgentClient {
 	this._options			= Object.assign( {}, DEFAULT_AGENT_CLIENT_OPTIONS, options );
     }
 
-    async call ( dna_nickname, zome, func, payload, timeout ) {
+    async call ( dna_role_id, zome, func, payload, timeout ) {
 	if ( this._conn._opened === false ) {
 	    log.debug && log("Opening connection '%s' for AgentClient", this._conn.name );
 	    await this._conn.open();
 	}
 
-	let dna_schema			= this._app_schema.dna( dna_nickname );
+	let dna_schema			= this._app_schema.dna( dna_role_id );
 	let zome_api			= dna_schema.zome( zome );
 
 	return await zome_api.call(

@@ -22,7 +22,7 @@ function reformat_app_info ( app_info ) {
 
     app_info.slots			= {};
     for ( let slot of Object.values( app_info.cell_data ) ) {
-	app_info.slots[slot.cell_nick] = {
+	app_info.slots[slot.role_id] = {
 	    "cell_id": reformat_cell_id( slot.cell_id ),
 	};
     }
@@ -124,10 +124,10 @@ class AdminClient {
 	let installation		= await this._request("install_app", {
 	    "installed_app_id": app_id,
 	    "agent_key": new AgentPubKey(agent_hash),
-	    "dnas": Object.entries( dnas ).map( ([dna_nick, dna_hash]) => {
+	    "dnas": Object.entries( dnas ).map( ([role_id, dna_hash]) => {
 		return {
 		    "hash": new DnaHash(dna_hash),
-		    "nick": dna_nick,
+		    "role_id": role_id,
 		};
 	    }),
 	});
@@ -192,7 +192,7 @@ class AdminClient {
     async createCloneCell ( app_id, slot_id, dna_hash, agent_pubkey, options = {} ) { // -> bool
 	let cell_id			= await this._request("create_clone_cell", {
 	    "installed_app_id":	app_id,
-	    "slot_id":		slot_id,
+	    "role_id":		slot_id,
 	    "dna_hash":		dna_hash,
 	    "agent_key":	agent_pubkey,
 	    "properties":	options.properties || null,

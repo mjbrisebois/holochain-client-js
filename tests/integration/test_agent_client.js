@@ -117,7 +117,9 @@ function errors_tests () {
 
 describe("Integration: Agent Client", () => {
 
-    before(async () => {
+    before(async function () {
+	this.timeout( 5_000 );
+
 	conductor			= new Holochain();
 
 	conductor.on("conductor:stdout", line => {

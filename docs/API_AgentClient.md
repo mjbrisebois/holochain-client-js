@@ -30,7 +30,7 @@ const client = new AgentClient( agent_hash, {
 ### `<AgentClient>.call( dna, zome, func, payload, timeout ) -> Promise<*>`
 Call a DNA's zome function as this Client's agent.
 
-- `dna` - (*required*) the DNA nickname matching one in this Client's `AppSchema`
+- `dna` - (*required*) the DNA role ID matching one in this Client's `AppSchema`
 - `zome` - (*required*) the zome name
 - `func` - (*required*) the zome function name
 - `payload` - (*optional*) the payload corresponding to the zome name and function

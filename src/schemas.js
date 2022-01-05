@@ -11,13 +11,13 @@ class AppSchema {
 	this._dnas			= {};
 
 	if ( Array.isArray( structure ) ) {
-	    structure			= structure.reduce( (acc, dna_nick) => {
-		acc[dna_nick]		= null;
+	    structure			= structure.reduce( (acc, role_id) => {
+		acc[role_id]		= null;
 		return acc;
 	    }, {} );
 	}
 
-	for ( let [dna_nick, dna_input] of Object.entries(structure) ) {
+	for ( let [role_id, dna_input] of Object.entries(structure) ) {
 	    let dna_hash		= dna_input;
 	    let dna_struct		= {};
 
@@ -26,17 +26,17 @@ class AppSchema {
 		dna_struct		= dna_input[1];
 	    }
 
-	    this._dnas[dna_nick]	= new DnaSchema( dna_hash, dna_struct );
+	    this._dnas[role_id]	= new DnaSchema( dna_hash, dna_struct );
 	}
 
-	this._dna_nicknames		= Object.keys( this._dnas );
+	this._role_ids			= Object.keys( this._dnas );
     }
 
-    dna ( nickname ) {
-	if ( this._dnas[ nickname ] === undefined )
-	    throw new Error(`Unknown DNA nickname: ${nickname}; expected one of ${ this._dna_nicknames }`);
+    dna ( role_id ) {
+	if ( this._dnas[ role_id ] === undefined )
+	    throw new Error(`Unknown DNA role ID: ${role_id}; expected one of ${ this._role_ids }`);
 
-	return this._dnas[ nickname ];
+	return this._dnas[ role_id ];
     }
 }
 set_tostringtag( AppSchema, "AppSchema" );
