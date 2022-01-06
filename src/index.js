@@ -16,6 +16,31 @@ const DEFAULT_AGENT_CLIENT_OPTIONS	= {
 };
 
 class AgentClient {
+
+    static async createFromAppInfo ( app_id, connection, timeout, options ) {
+	const conn			= new Connection( connection );
+
+	log.debug && log("Opening connection '%s' for AgentClient", conn.name );
+	await conn.open();
+
+	const app_schema		= {};
+	const app_info			= await conn.request("app_info", {
+	    "installed_app_id": app_id,
+	}, timeout );
+
+	let agent;
+
+	for ( let cell of app_info.cell_data ) {
+	    if ( agent === undefined )
+		agent			= new HoloHashTypes.AgentPubKey( cell.cell_id[1] );
+
+	    app_schema[cell.role_id]	= new HoloHashTypes.DnaHash( cell.cell_id[0] );
+	}
+
+	log.debug && log("Creating AgentClient from app info for '%s' (%s): %s ", app_id, agent, Object.keys(app_schema).join(", ") );
+	return new AgentClient( agent, app_schema, conn, options );
+    }
+
     constructor ( agent, app_schema, connection, options ) {
 	this._agent			= agent;
 	this._app_schema		= app_schema instanceof AppSchema

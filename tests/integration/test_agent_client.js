@@ -74,6 +74,16 @@ function basic_tests () {
 	    await app.close();
 	}
     });
+
+    it("should create AgentClient with app info", async function () {
+	const app			= await AgentClient.createFromAppInfo( TEST_APP_ID, app_port );
+
+	try {
+	    expect( Object.keys(app._app_schema._dnas) ).to.have.length( 1 );
+	} finally {
+	    await app.close();
+	}
+    });
 }
 
 function errors_tests () {

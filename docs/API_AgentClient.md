@@ -3,6 +3,22 @@
 
 # API Reference for `AgentClient` class
 
+## `AgentClient.createFromAppInfo( app_id, connection, timeout, opts )`
+Create a client using the data fetched via an app info request.
+
+- `app_id` - (*required*) the installed App ID
+- `connection` - (*required*) either
+  - an instance of `Connection`
+  - or, it is used as the input for `new Connection( connection )`
+- `timeout` - (*optional*) timeout used for fetching app info
+- `opts` - (*optional*) optional parameters passed through to `new AgentClient( _, _, _, opts )`
+
+Example
+```javascript
+const client = await AgentClient.createFromAppInfo( "my-app-bundle", 45678 );
+```
+
+
 ## `new AgentClient( agent, schema, connection, options )`
 A class for communicating with Conductor's App interface with a specific Agent.
 

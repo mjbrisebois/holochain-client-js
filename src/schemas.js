@@ -26,7 +26,7 @@ class AppSchema {
 		dna_struct		= dna_input[1];
 	    }
 
-	    this._dnas[role_id]	= new DnaSchema( dna_hash, dna_struct );
+	    this._dnas[role_id]		= new DnaSchema( dna_hash, dna_struct );
 	}
 
 	this._role_ids			= Object.keys( this._dnas );
