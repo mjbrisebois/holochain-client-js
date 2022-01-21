@@ -52,6 +52,38 @@ function reformat_cell_errors ( cell_errors ) {
     return cell_errors;
 }
 
+function deep_compare ( a, b ) {
+    for ( let i in a ) {
+	if ( a[i] === b[i] )
+	    continue;
+
+	const c				= a[i];
+	const d				= b[i];
+
+	if ( typeof c === "object" ) {
+	    if ( typeof d !== "object" ) // object's have a higher value than primitives
+		return 1;
+
+	    const sub_sort		= deep_compare( c, d );
+
+	    if ( sub_sort === 0 )
+		continue;
+	    else
+		return sub_sort;
+	}
+
+	if ( typeof d === "object" )
+	    return -1;
+
+	if ( c > d )
+	    return 1;
+	else
+	    return -1;
+    }
+
+    return 0;
+}
+
 class AdminClient {
     static APPS_ENABLED			= "Enabled";
     static APPS_DISABLED		= "Disabled";
@@ -94,6 +126,8 @@ class AdminClient {
 		},
 	    };
 	}) );
+	// The response value is 'undefined' but we return it anyway in case Conductor starts
+	// sending feedback.
 	return resp;
     }
 
@@ -121,6 +155,9 @@ class AdminClient {
     }
 
     async installApp ( app_id = null, agent_hash, dnas ) {
+	if ( !app_id )
+	    app_id			= ( Math.random() * 1e17 ).toString(16).slice(-8);
+
 	let installation		= await this._request("install_app", {
 	    "installed_app_id": app_id,
 	    "agent_key": new AgentPubKey(agent_hash),
@@ -141,6 +178,9 @@ class AdminClient {
 	    "uid": null, // overrite bundle DNAs
 	}, options );
 
+	if ( app_id === "*" )
+	    app_id			= ( Math.random() * 1e17 ).toString(16).slice(0,8);
+
 	let installation		= await this._request("install_app_bundle", {
 	    "installed_app_id": app_id,
 	    "path": path,
@@ -158,6 +198,7 @@ class AdminClient {
 	});
     }
 
+    // DEPRECATED in Holochain
     async activateApp ( app_id ) { // -> undefined (on purpose for legacy support and to promote 'enableApp'
 	deprecation_notice("Holochain admin interface 'activateApp()' is deprecated; use 'enableApp()' instead");
 
@@ -189,15 +230,19 @@ class AdminClient {
 	});
     }
 
+    // Even if no properties change, the Conductor will generate a UID so that it does not conflict
+    // with the Cell being cloned.
     async createCloneCell ( app_id, slot_id, dna_hash, agent_pubkey, options = {} ) { // -> bool
-	let cell_id			= await this._request("create_clone_cell", {
-	    "installed_app_id":	app_id,
-	    "role_id":		slot_id,
-	    "dna_hash":		dna_hash,
-	    "agent_key":	agent_pubkey,
-	    "properties":	options.properties || null,
-	    "membrane_proof":	options.membrane_proof || null,
-	});
+	const input			= {
+	    "installed_app_id":	app_id,				// where to put new cell
+	    "role_id":		slot_id,			// role ID for new cell
+	    "dna_hash":		dna_hash,			// DNA to be cloned
+	    "agent_key":	agent_pubkey,			// Agent for cell
+	    "properties":	options.properties || null,	// new properties
+	    "membrane_proof":	options.membrane_proof || null, // proof for DNA, if required
+	};
+	let cell_id			= await this._request("create_clone_cell", input );
+
 	return reformat_cell_id( cell_id );
     }
 
@@ -207,6 +252,7 @@ class AdminClient {
 	dnas.forEach( (dna, i) => {
 	    dnas[i]			= new DnaHash( dna );
 	});
+	dnas.sort( deep_compare );
 
 	log.debug && log("DNAs (%s): %s", dnas.length, dnas );
 	return dnas;
@@ -218,6 +264,7 @@ class AdminClient {
 	cells.forEach( (cell, i) => {
 	    cells[i]			= [ new DnaHash( cell[0] ), new AgentPubKey( cell[1] ) ];
 	});
+	cells.sort( deep_compare );
 
 	log.debug && log("Cells (%s): %s", cells.length, JSON.stringify( cells ) );
 	return cells;
@@ -229,6 +276,7 @@ class AdminClient {
 	// Running,
 	// Stopped,
 	// Paused,
+	status				= status.charAt(0).toUpperCase() + status.slice(1);
 	const apps			= await this._request("list_apps", {
 	    "status_filter": {
 		[status]: null,
@@ -241,6 +289,7 @@ class AdminClient {
 
     async listAppInterfaces () {
 	const ifaces			= await this._request("list_app_interfaces");
+	ifaces.sort();
 
 	log.debug && log("Interfaces (%s): %s", ifaces.length, ifaces );
 	return ifaces;
@@ -248,12 +297,16 @@ class AdminClient {
 
     async listAgents () {
 	const agent_infos			= await this.requestAgentInfo();
-	const cell_agents			= agent_infos.map( info => info.agent );
+	const cell_agents			= agent_infos.map( info => info.agent.toString() );
 
-	return [ ...new Set( cell_agents ) ];
+	const unique_agents			= [ ...new Set( cell_agents ) ]
+	      .map( hash => new AgentPubKey(hash) );
+	unique_agents.sort( deep_compare );
+
+	return unique_agents;
     }
 
-    async cellState ( dna_hash, agent_hash ) {
+    async cellState ( dna_hash, agent_hash, start, end ) {
 	const state_json		= await this._request("dump_state", {
 	    "cell_id": [
 		new DnaHash( dna_hash ),
@@ -303,6 +356,10 @@ class AdminClient {
 
 	delete state.peer_dump;
 
+	if ( start || end ) {
+	    state.source_chain_dump.elements	= state.source_chain_dump.elements.slice( start, end );
+	}
+
 	state.source_chain_dump.elements.forEach( (element, i) => {
 	    element.signature			= new Uint8Array( element.signature );
 	    element.header_address		= new HeaderHash(  new Uint8Array(element.header_address) );
@@ -317,10 +374,69 @@ class AdminClient {
 	    if ( element.header.entry_hash ) {
 		element.header.entry_hash	= new EntryHash(   new Uint8Array(element.header.entry_hash) );
 		try {
+		    const length		= element.entry.entry.length;
 		    element.entry.entry		= decode( element.entry.entry );
+		    element.entry.length	= length;
 		} catch (err) {
 		    element.entry.entry		= new Uint8Array( element.entry.entry );
 		}
+	    }
+
+	    // CreateLink properties
+	    if ( element.header.base_address )
+		element.header.base_address	= new EntryHash(   new Uint8Array(element.header.base_address) );
+	    if ( element.header.target_address )
+		element.header.target_address	= new EntryHash(   new Uint8Array(element.header.target_address) );
+
+	    if ( element.header.tag ) {
+		const prefix			= element.header.tag.slice(0,8).map( n => String.fromCharCode(n) ).join("");
+
+		if ( prefix === "hdk.path" ) {
+		    const bytes			= element.header.tag.slice(11);
+		    const segments		= [];
+		    let segment			= [];
+		    let uint32			= [];
+		    bytes.forEach( (n, i) => {
+			// If we are at the start of a new byte
+			if ( n !== 0
+			     && bytes[i-1] === 0
+			     && bytes[i-2] === 0
+			     && bytes[i-3] === 0 ) {
+			    // If the length is greater than 4, then we want to reset the segment as
+			    // well as the uint32
+			    if ( uint32.length > 4 ) {
+				segments.push( new Uint8Array(segment) );
+
+				segment		= [];
+				segment.push( ...uint32.slice(-4) );
+
+				uint32		= [];
+			    }
+			    else {
+				segment.push( ...uint32 );
+				uint32		= [];
+			    }
+			}
+
+			uint32.push( n );
+		    });
+
+		    segment.push( ...uint32 );
+		    segments.push( new Uint8Array(segment) );
+
+
+		    segments.forEach( (seg, i) => {
+			const codes		= new Uint32Array( seg.buffer, seg.byteOffset, seg.byteLength / 4 );
+			segments[i]		= [].map.call( codes, n => String.fromCharCode(n) ).join("");
+		    });
+
+		    element.header.tag_string	= segments.join(".");
+		}
+		else {
+		    element.header.tag_string	= "hdk.path(" + element.header.tag.map( n => String.fromCharCode(n) ).join("") + ")";
+		}
+
+		element.header.tag		= new Uint8Array( element.header.tag );
 	    }
 	});
 

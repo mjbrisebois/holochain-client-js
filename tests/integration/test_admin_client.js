@@ -32,11 +32,13 @@ if ( process.env.LOG_LEVEL )
 
 const TEST_DNA_PATH			= path.join( __dirname, "../packs/memory.dna" );
 const TEST_HAPP_PATH			= path.join( __dirname, "../packs/storage.happ" );
+const TEST_HAPP_CLONES_PATH		= path.join( __dirname, "../packs/storage_with_clones.happ" );
 const TEST_APP_ID			= "test-app";
+const TEST_APP_CLONES_ID		= `${TEST_APP_ID}-bundle-clones`;
 
 let conductor;
 let admin;
-let dna_hash;
+let dna_hash, dna2_hash;
 let agent_hash;
 let app_port;
 
@@ -61,11 +63,19 @@ function basic_tests () {
     it("should register DNA", async function () {
 	dna_hash			= await admin.registerDna( TEST_DNA_PATH );
 	log.normal("Register response: %s", dna_hash );
+
+	dna2_hash			= await admin.registerDna( TEST_DNA_PATH, {
+	    "uid": "something else",
+	}, {
+	    "properties": {},
+	});
+	log.normal("Register response: %s", dna_hash );
     });
 
     it("should install app", async function () {
 	let installation		= await admin.installApp( TEST_APP_ID, agent_hash, {
 	    "memory": dna_hash,
+	    "memory2": dna2_hash,
 	});
 	log.normal("Installed app '%s' [state: %s]", installation.installed_app_id, installation.status );
 
@@ -74,6 +84,14 @@ function basic_tests () {
 		role_id.padEnd(15), slot.cell_id,
 	    ]);
 	});
+
+	{
+	    let app_info		= await admin.installApp( null, agent_hash, {
+		"memory": dna_hash,
+	    });
+
+	    expect( app_info.installed_app_id ).to.have.length( 8 );
+	}
     });
 
     it("should install app bundle", async function () {
@@ -85,6 +103,19 @@ function basic_tests () {
 		role_id.padEnd(15), slot.cell_id,
 	    ]);
 	});
+
+	{
+	    let app_info		= await admin.installAppBundle( "*", agent_hash, TEST_HAPP_PATH );
+
+	    expect( app_info.installed_app_id ).to.have.length( 8 );
+	}
+    });
+
+    it("should install app bundle with clones", async function () {
+	let app_info			= await admin.installAppBundle( TEST_APP_CLONES_ID, agent_hash, TEST_HAPP_CLONES_PATH );
+	log.normal("Installed app '%s' [state: %s]", app_info.installed_app_id, app_info.status );
+
+	expect( app_info.installed_app_id	).to.equal( TEST_APP_CLONES_ID );
     });
 
     it("should enable app", async function () {
@@ -98,11 +129,27 @@ function basic_tests () {
 	log.normal("Started app: %s", resp );
     });
 
+    it("should create clone cell", async function () {
+	return this.skip();
+
+	const cell_id			= await admin.createCloneCell(
+	    TEST_APP_CLONES_ID, "storage", dna_hash, agent_hash, {
+		"properties": {
+		    "admin": String(agent_hash),
+		},
+	    }
+	);
+	console.log( json.debug(cell_id) );
+
+	expect( cell_id[0]		).to.not.deep.equal( dna_hash );
+	expect( cell_id[1]		).to.deep.equal( agent_hash );
+    });
+
     it("should list DNAs", async function () {
 	const dnas			= await admin.listDnas();
 
-	expect( dnas			).to.have.length( 1 );
-	expect( dnas[0]			).to.deep.equal( dna_hash );
+	expect( dnas			).to.have.length( 2 );
+	expect( dnas.map(String)	).to.include( dna_hash.toString() );
     });
 
     it("should register DNA using existing DNA hash", async function () {
@@ -116,10 +163,10 @@ function basic_tests () {
 
     it("should list cells", async function () {
 	const cells			= await admin.listCells();
+	const dnas			= cells.map( cell => String(cell[0]) );
 
-	expect( cells			).to.have.length( 1 );
-	expect( cells[0][0]		).to.deep.equal( dna_hash );
-	expect( cells[0][1]		).to.deep.equal( agent_hash );
+	expect( cells			).to.have.length( 2 );
+	expect( dnas			).to.include( dna_hash.toString() );
     });
 
     it("should list apps", async function () {
@@ -137,13 +184,13 @@ function basic_tests () {
 	{
 	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_DISABLED );
 
-	    expect( filtered_apps	).to.have.length( 1 );
+	    expect( filtered_apps	).to.have.length( 4 );
 	}
 
 	{
 	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_STOPPED );
 
-	    expect( filtered_apps	).to.have.length( 1 );
+	    expect( filtered_apps	).to.have.length( 4 );
 	}
 
 	{
@@ -170,7 +217,7 @@ function basic_tests () {
     it("should request agent info", async function () {
 	const agents			= await admin.requestAgentInfo();
 
-	expect( agents			).to.have.length( 1 );
+	expect( agents			).to.have.length( 2 );
 	expect( agents[0].agent		).to.deep.equal( agent_hash );
     });
 
@@ -211,9 +258,6 @@ function basic_tests () {
 	    const cell_id		= await admin.createCloneCell(
 		TEST_APP_ID, "memory", dna_hash, agent_hash
 	    );
-
-	    expect( cell_id[0]		).to.not.deep.equal( dna_hash );
-	    expect( cell_id[1]		).to.deep.equal( agent_hash );
 	}, ConductorError, "CloneLimitExceeded" );
     });
 
@@ -236,13 +280,13 @@ function basic_tests () {
 	{
 	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_DISABLED );
 
-	    expect( filtered_apps	).to.have.length( 2 );
+	    expect( filtered_apps	).to.have.length( 5 );
 	}
 
 	{
 	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_STOPPED );
 
-	    expect( filtered_apps	).to.have.length( 2 );
+	    expect( filtered_apps	).to.have.length( 5 );
 	}
 
 	{

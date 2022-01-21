@@ -388,11 +388,13 @@ await admin.listAgents();
 ```
 
 
-### `<AdminClient>.cellState( dna_hash, agent_hash ) -> Promise<object>`
+### `<AdminClient>.cellState( dna_hash, agent_hash, start, end ) -> Promise<object>`
 Get the full state dump for a specific cell.
 
 - `dna_hash` - (*required*) a 39 byte `Uint8Array` that is a registered `DnaHash`
 - `agent_hash` - (*required*) a 39 byte `Uint8Array` that is a `AgentPubKey`
+- `start` - (*optional*) the start number used to slice the source chain elements
+- `end` - (*optional*) the end number used to slice the source chain elements
 
 Returns a Promise that resolves with the state dump response
 

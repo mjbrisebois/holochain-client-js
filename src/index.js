@@ -17,7 +17,7 @@ const DEFAULT_AGENT_CLIENT_OPTIONS	= {
 
 class AgentClient {
 
-    static async createFromAppInfo ( app_id, connection, timeout, options ) {
+    static async createFromAppInfo ( app_id, connection, timeout, options = {} ) {
 	const conn			= new Connection( connection );
 
 	log.debug && log("Opening connection '%s' for AgentClient", conn.name );
@@ -31,11 +31,16 @@ class AgentClient {
 	let agent;
 
 	for ( let cell of app_info.cell_data ) {
-	    if ( agent === undefined )
-		agent			= new HoloHashTypes.AgentPubKey( cell.cell_id[1] );
+	    cell.cell_id[0]		= new HoloHashTypes.DnaHash(	 cell.cell_id[0] );
+	    cell.cell_id[1]		= new HoloHashTypes.AgentPubKey( cell.cell_id[1] );
 
-	    app_schema[cell.role_id]	= new HoloHashTypes.DnaHash( cell.cell_id[0] );
+	    if ( agent === undefined )
+		agent			= cell.cell_id[1];
+
+	    app_schema[cell.role_id]	= cell.cell_id[0];
 	}
+
+	options.app_info		= app_info;
 
 	log.debug && log("Creating AgentClient from app info for '%s' (%s): %s ", app_id, agent, Object.keys(app_schema).join(", ") );
 	return new AgentClient( agent, app_schema, conn, options );
@@ -53,6 +58,8 @@ class AgentClient {
 	    this._conn			= new Connection( connection );
 
 	this._options			= Object.assign( {}, DEFAULT_AGENT_CLIENT_OPTIONS, options );
+
+	this.app_info			= this._options.app_info || null;
     }
 
     async call ( dna_role_id, zome, func, payload, timeout ) {
