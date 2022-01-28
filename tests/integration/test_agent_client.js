@@ -100,7 +100,7 @@ function errors_tests () {
     it("should fail because non-existent zome", async function () {
 	await expect_reject( async () => {
 	    await app.call("memory", "nonexistent", "oops", {}, 10 );
-	}, TimeoutError, "get response for request 'zome_call'" );
+	}, ConductorError, "Zome 'nonexistent' not found" );
     });
 
     // non-existent zome function
