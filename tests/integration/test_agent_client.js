@@ -84,6 +84,25 @@ function basic_tests () {
 	    await app.close();
 	}
     });
+
+    it("should create AgentClient with input/ouput processors", async function () {
+	const app			= await AgentClient.createFromAppInfo( TEST_APP_ID, app_port );
+
+	app.addProcessor("output", essence => {
+	    return new HoloHash( essence.payload );
+	});
+
+	try {
+	    let result			= await app.call(
+		"memory", "mere_memory", "save_bytes", Buffer.from("Super important bytes")
+	    );
+
+	    log.normal("Save bytes response: %s", result );
+	    expect( result		).to.be.an("EntryHash");
+	} finally {
+	    await app.close();
+	}
+    });
 }
 
 function errors_tests () {

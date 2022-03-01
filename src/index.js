@@ -60,6 +60,17 @@ class AgentClient {
 	this._options			= Object.assign( {}, DEFAULT_AGENT_CLIENT_OPTIONS, options );
 
 	this.app_info			= this._options.app_info || null;
+	this.pre_processors		= [];
+	this.post_processors		= [];
+    }
+
+    addProcessor ( event, callback ) {
+	if ( event === "input" )
+	    this.pre_processors.push( callback );
+	else if ( event === "output" )
+	    this.post_processors.push( callback );
+	else
+	    throw new Error(`Unknown processor event '${event}'; expected 'input' or 'output'`);
     }
 
     async call ( dna_role_id, zome, func, payload, timeout ) {
@@ -71,7 +82,11 @@ class AgentClient {
 	let dna_schema			= this._app_schema.dna( dna_role_id );
 	let zome_api			= dna_schema.zome( zome );
 
-	return await zome_api.call(
+	for ( let processor of this.pre_processors ) {
+	    payload			= await processor( payload );
+	}
+
+	let result			= await zome_api.call(
 	    this._conn,
 	    this._agent,
 	    dna_schema.hash(),
@@ -79,6 +94,12 @@ class AgentClient {
 	    payload,
 	    timeout || this._options.timeout,
 	);
+
+	for ( let processor of this.post_processors ) {
+	    result			= await processor( result );
+	}
+
+	return result;
     }
 
     async close ( timeout ) {

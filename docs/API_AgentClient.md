@@ -43,6 +43,23 @@ const client = new AgentClient( agent_hash, {
 ```
 
 
+### `<AgentClient>.addProcessor( event, fn ) -> Promise<*>`
+Add a callback function for processing call input/output.
+
+- `event` - (*required*) the point when this processor should run
+  - options are: `input`, `output`
+- `fn` - (*required*) the processor callback function
+
+Example
+```javascript
+await client.addProcessor("post", result => {
+    result.created_at = new Date( result.created_at );
+    result.bytes = new Uint8Array( result.bytes );
+    return result;
+});
+```
+
+
 ### `<AgentClient>.call( dna, zome, func, payload, timeout ) -> Promise<*>`
 Call a DNA's zome function as this Client's agent.
 
