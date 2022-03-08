@@ -49,10 +49,29 @@ Add a callback function for processing call input/output.
 - `event` - (*required*) the point when this processor should run
   - options are: `input`, `output`
 - `fn` - (*required*) the processor callback function
+  - called with `fn.call( request_context, subject, request_context )`
+
+
+#### Request Context
+Values are from `this.call( ... )` arguments
+```javascript
+{
+    "start": Date(),
+    "end": null || Date(),
+    "dna": dna,
+    "zome": zome,
+    "func": func,
+    "input": payload,
+    "timeout": timeout,
+    duration () => milliseconds
+}
+```
 
 Example
 ```javascript
-await client.addProcessor("post", result => {
+await client.addProcessor("post", function (result) {
+    console.log("Response for request:", this );
+
     result.created_at = new Date( result.created_at );
     result.bytes = new Uint8Array( result.bytes );
     return result;

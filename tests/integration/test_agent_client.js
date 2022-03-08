@@ -88,7 +88,15 @@ function basic_tests () {
     it("should create AgentClient with input/ouput processors", async function () {
 	const app			= await AgentClient.createFromAppInfo( TEST_APP_ID, app_port );
 
-	app.addProcessor("output", essence => {
+	app.addProcessor("output", function (essence) {
+	    expect( this.dna		).to.equal("memory");
+	    expect( this.zome		).to.equal("mere_memory");
+	    expect( this.func		).to.equal("save_bytes");
+
+	    expect( this.start		).to.be.a("Date");
+	    expect( this.end		).to.be.null;
+	    expect( this.duration()	).to.be.a("number")
+
 	    return new HoloHash( essence.payload );
 	});
 

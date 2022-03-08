@@ -73,18 +73,45 @@ class AgentClient {
 	    throw new Error(`Unknown processor event '${event}'; expected 'input' or 'output'`);
     }
 
+    async _run_processors ( event, value, ctx ) {
+	let processors;
+	if ( event === "input" )
+	    processors			= this.pre_processors;
+	else if ( event === "output" )
+	    processors			= this.post_processors;
+	else
+	    throw new Error(`Unknown processor event '${event}'; expected 'input' or 'output'`);
+
+	for ( let fn of processors ) {
+	    value			= await fn.call( ctx, value, ctx );
+	}
+
+	return value;
+    }
+
     async call ( dna_role_id, zome, func, payload, timeout ) {
 	if ( this._conn._opened === false ) {
 	    log.debug && log("Opening connection '%s' for AgentClient", this._conn.name );
 	    await this._conn.open();
 	}
 
+	const req_ctx			= {
+	    "start": new Date(),
+	    "end": null,
+	    "dna": dna_role_id,
+	    "zome": zome,
+	    "func": func,
+	    "input": payload,
+	    "timeout": timeout,
+	    duration () {
+		return ( req_ctx.end || new Date() ) - req_ctx.start;
+	    },
+	};
+
 	let dna_schema			= this._app_schema.dna( dna_role_id );
 	let zome_api			= dna_schema.zome( zome );
 
-	for ( let processor of this.pre_processors ) {
-	    payload			= await processor( payload );
-	}
+	payload				= await this._run_processors( "input", payload, req_ctx );
 
 	let result			= await zome_api.call(
 	    this._conn,
@@ -95,9 +122,9 @@ class AgentClient {
 	    timeout || this._options.timeout,
 	);
 
-	for ( let processor of this.post_processors ) {
-	    result			= await processor( result );
-	}
+	result				= await this._run_processors( "output", result, req_ctx );
+
+	req_ctx.end			= new Date();
 
 	return result;
     }
