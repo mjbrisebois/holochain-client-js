@@ -148,7 +148,7 @@ function basic_tests () {
     it("should list DNAs", async function () {
 	const dnas			= await admin.listDnas();
 
-	expect( dnas			).to.have.length( 3 );
+	expect( dnas			).to.have.length( 2 );
 	expect( dnas.map(String)	).to.include( dna_hash.toString() );
     });
 
