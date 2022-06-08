@@ -76,14 +76,17 @@ class Connection {
 	    this._close_f		= f;
 	});
 
+	const open_error		= new Error("");
 	try {
 	    log.debug && this._log("Opening connection to: %s", this._uri );
 	    this._socket		= new WebSocket( this._uri );
 	    this._socket.binaryType	= "arraybuffer";
 
 	    this._socket.onerror	= ( event ) => {
-		if ( this._opened === false )
-		    this._open_r( event.error );
+		if ( this._opened === false ) {
+		    open_error.message	= `Failed to open WebSocket: ${event.target.url}`;
+		    this._open_r( open_error );
+		}
 		else {
 		    console.error(`${this} socket error:`, event.error );
 		    // this.emit("error", event.error );

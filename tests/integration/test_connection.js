@@ -120,7 +120,7 @@ function errors_tests () {
 	    } finally {
 		await conn.close();
 	    }
-	}, Error, "ECONNREFUSED" );
+	}, Error, "Failed to open WebSocket" );
 
 	await expect_reject( async () => {
 	    let conn			= new Connection( "example.com:37287", {
