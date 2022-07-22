@@ -44,6 +44,8 @@ function connection_tests () {
     });
 
     it("should install app and activate", async function () {
+	this.timeout( 10_000 );
+
 	agent_hash			= new HoloHash( await conn.request("generate_agent_pub_key") );
 	log.normal("Agent response: %s", agent_hash );
 
@@ -135,6 +137,8 @@ function errors_tests () {
     });
 
     it("should call invalid API method", async function () {
+	this.timeout( 10_000 );
+
 	await expect_reject( async () => {
 	    await conn.request("invalid_api_endpoint");
 	}, DeserializationError, "expected one of" );

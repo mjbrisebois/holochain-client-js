@@ -237,7 +237,7 @@ class Connection {
 		err			= new DnaReadError( message );
 	    }
 	    else if ( type === "ribosome_error" ) {
-		if ( message.includes("Wasm error while working with Ribosome: Deserialize") )
+		if ( message.includes("Wasm runtime error while working with Ribosome") && message.includes("error: Deserialize") )
 		    err			= new RibosomeDeserializeError( message, request.args );
 		else
 		    err			= new RibosomeError( message );

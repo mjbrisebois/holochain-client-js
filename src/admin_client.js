@@ -1,7 +1,7 @@
 
 const { decode }			= require('@msgpack/msgpack');
 const { HoloHash,
-	HeaderHash,
+	ActionHash,
 	EntryHash,
 	AgentPubKey,
 	DnaHash }			= require('@whi/holo-hash');
@@ -325,19 +325,19 @@ class AdminClient {
 	// state.peer_dump.this_agent[0]
 	// state.peer_dump.this_agent[1]
 	// state.peer_dump.peers[]
-	// state.source_chain_dump.elements[0].signature
-	// state.source_chain_dump.elements[0].header_address
-	// state.source_chain_dump.elements[0].header.type
-	// state.source_chain_dump.elements[0].header.author
-	// state.source_chain_dump.elements[0].header.timestamp[0]
-	// state.source_chain_dump.elements[0].header.timestamp[1]
-	// state.source_chain_dump.elements[0].header.hash
-	// state.source_chain_dump.elements[0].header.header_seq
-	// state.source_chain_dump.elements[0].header.prev_header
-	// state.source_chain_dump.elements[0].header.entry_type{App?}
-	// state.source_chain_dump.elements[0].header.entry_hash
-	// state.source_chain_dump.elements[0].entry.entry_type = "App"
-	// state.source_chain_dump.elements[0].entry.entry
+	// state.source_chain_dump.records[0].signature
+	// state.source_chain_dump.records[0].action_address
+	// state.source_chain_dump.records[0].action.type
+	// state.source_chain_dump.records[0].action.author
+	// state.source_chain_dump.records[0].action.timestamp[0]
+	// state.source_chain_dump.records[0].action.timestamp[1]
+	// state.source_chain_dump.records[0].action.hash
+	// state.source_chain_dump.records[0].action.action_seq
+	// state.source_chain_dump.records[0].action.prev_action
+	// state.source_chain_dump.records[0].action.entry_type{App?}
+	// state.source_chain_dump.records[0].action.entry_hash
+	// state.source_chain_dump.records[0].entry.entry_type = "App"
+	// state.source_chain_dump.records[0].entry.entry
 	function agent_info ( agent_info ) {
 	    return {
 		"agent": new Uint8Array( agent_info.kitsune_agent ),
@@ -357,42 +357,42 @@ class AdminClient {
 	delete state.peer_dump;
 
 	if ( start || end ) {
-	    state.source_chain_dump.elements	= state.source_chain_dump.elements.slice( start, end );
+	    state.source_chain_dump.records	= state.source_chain_dump.records.slice( start, end );
 	}
 
-	state.source_chain_dump.elements.forEach( (element, i) => {
-	    element.signature			= new Uint8Array( element.signature );
-	    element.header_address		= new HeaderHash(  new Uint8Array(element.header_address) );
-	    element.header.author		= new AgentPubKey( new Uint8Array(element.header.author) );
+	state.source_chain_dump.records.forEach( (record, i) => {
+	    record.signature			= new Uint8Array( record.signature );
+	    record.action_address		= new ActionHash(  new Uint8Array(record.action_address) );
+	    record.action.author		= new AgentPubKey( new Uint8Array(record.action.author) );
 
-	    if ( element.header.hash )
-		element.header.hash		= new HoloHash(    new Uint8Array(element.header.hash) );
+	    if ( record.action.hash )
+		record.action.hash		= new HoloHash(    new Uint8Array(record.action.hash) );
 
-	    if ( element.header.prev_header )
-		element.header.prev_header	= new HeaderHash(  new Uint8Array(element.header.prev_header) );
+	    if ( record.action.prev_action )
+		record.action.prev_action	= new ActionHash(  new Uint8Array(record.action.prev_action) );
 
-	    if ( element.header.entry_hash ) {
-		element.header.entry_hash	= new EntryHash(   new Uint8Array(element.header.entry_hash) );
+	    if ( record.action.entry_hash ) {
+		record.action.entry_hash	= new EntryHash(   new Uint8Array(record.action.entry_hash) );
 		try {
-		    const length		= element.entry.entry.length;
-		    element.entry.entry		= decode( element.entry.entry );
-		    element.entry.length	= length;
+		    const length		= record.entry.entry.length;
+		    record.entry.entry		= decode( record.entry.entry );
+		    record.entry.length	= length;
 		} catch (err) {
-		    element.entry.entry		= new Uint8Array( element.entry.entry );
+		    record.entry.entry		= new Uint8Array( record.entry.entry );
 		}
 	    }
 
 	    // CreateLink properties
-	    if ( element.header.base_address )
-		element.header.base_address	= new EntryHash(   new Uint8Array(element.header.base_address) );
-	    if ( element.header.target_address )
-		element.header.target_address	= new EntryHash(   new Uint8Array(element.header.target_address) );
+	    if ( record.action.base_address )
+		record.action.base_address	= new EntryHash(   new Uint8Array(record.action.base_address) );
+	    if ( record.action.target_address )
+		record.action.target_address	= new EntryHash(   new Uint8Array(record.action.target_address) );
 
-	    if ( element.header.tag ) {
-		const prefix			= element.header.tag.slice(0,8).map( n => String.fromCharCode(n) ).join("");
+	    if ( record.action.tag ) {
+		const prefix			= record.action.tag.slice(0,8).map( n => String.fromCharCode(n) ).join("");
 
 		if ( prefix === "hdk.path" ) {
-		    const bytes			= element.header.tag.slice(11);
+		    const bytes			= record.action.tag.slice(11);
 		    const segments		= [];
 		    let segment			= [];
 		    let uint32			= [];
@@ -430,18 +430,18 @@ class AdminClient {
 			segments[i]		= [].map.call( codes, n => String.fromCharCode(n) ).join("");
 		    });
 
-		    element.header.tag_string	= segments.join(".");
+		    record.action.tag_string	= segments.join(".");
 		}
 		else {
-		    element.header.tag_string	= "hdk.path(" + element.header.tag.map( n => String.fromCharCode(n) ).join("") + ")";
+		    record.action.tag_string	= "hdk.path(" + record.action.tag.map( n => String.fromCharCode(n) ).join("") + ")";
 		}
 
-		element.header.tag		= new Uint8Array( element.header.tag );
+		record.action.tag		= new Uint8Array( record.action.tag );
 	    }
 	});
 
 	state.published_ops_count		= state.source_chain_dump.published_ops_count;
-	state.source_chain			= state.source_chain_dump.elements;
+	state.source_chain			= state.source_chain_dump.records;
 
 	delete state.source_chain_dump;
 

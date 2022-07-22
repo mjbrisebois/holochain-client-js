@@ -16,7 +16,7 @@ const {
 
     HoloHashTypes,
 } = require('@whi/holochain-client');
-const { HoloHash, AgentPubKey, HeaderHash, EntryHash, DnaHash } = HoloHashTypes;
+const { HoloHash, AgentPubKey, ActionHash, EntryHash, DnaHash } = HoloHashTypes;
 ```
 
 ## [`new AgentClient( ... )`](./API_AgentClient.md)

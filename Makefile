@@ -10,32 +10,33 @@ node_modules:		package-lock.json
 build:			node_modules
 
 
+MOCHA_OPTS		= -t 5000
 #
 # Testing
 #
 test:			build test-setup
-	npx mocha --recursive ./tests
+	npx mocha $(MOCHA_OPTS) --recursive ./tests
 test-debug:		build test-setup
-	LOG_LEVEL=silly npx mocha --recursive ./tests
+	LOG_LEVEL=silly npx mocha $(MOCHA_OPTS) --recursive ./tests
 
 test-unit:		build test-setup
-	npx mocha ./tests/unit
+	npx mocha $(MOCHA_OPTS) ./tests/unit
 test-unit-debug:	build test-setup
-	LOG_LEVEL=silly npx mocha ./tests/unit
+	LOG_LEVEL=silly npx mocha $(MOCHA_OPTS) ./tests/unit
 
 test-integration:		build test-setup
-	npx mocha ./tests/integration
+	npx mocha $(MOCHA_OPTS) ./tests/integration
 test-integration-debug:		build test-setup
-	LOG_LEVEL=silly npx mocha ./tests/integration
+	LOG_LEVEL=silly npx mocha $(MOCHA_OPTS) ./tests/integration
 test-integration-debug-%:	build test-setup
-	LOG_LEVEL=silly npx mocha ./tests/integration/test_$*.js
+	LOG_LEVEL=silly npx mocha $(MOCHA_OPTS) ./tests/integration/test_$*.js
 
 test-e2e:		prepare-package build test-setup
-	npx mocha ./tests/e2e
+	npx mocha $(MOCHA_OPTS) ./tests/e2e
 test-e2e-debug:		prepare-package build test-setup
-	LOG_LEVEL=silly npx mocha ./tests/e2e
+	LOG_LEVEL=silly npx mocha $(MOCHA_OPTS) ./tests/e2e
 test-e2e-debug-%:	prepare-package build test-setup
-	LOG_LEVEL=silly npx mocha ./tests/e2e/test_$*.js
+	LOG_LEVEL=silly npx mocha $(MOCHA_OPTS) ./tests/e2e/test_$*.js
 test-setup:
 
 

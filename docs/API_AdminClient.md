@@ -393,8 +393,8 @@ Get the full state dump for a specific cell.
 
 - `dna_hash` - (*required*) a 39 byte `Uint8Array` that is a registered `DnaHash`
 - `agent_hash` - (*required*) a 39 byte `Uint8Array` that is a `AgentPubKey`
-- `start` - (*optional*) the start number used to slice the source chain elements
-- `end` - (*optional*) the end number used to slice the source chain elements
+- `start` - (*optional*) the start number used to slice the source chain records
+- `end` - (*optional*) the end number used to slice the source chain records
 
 Returns a Promise that resolves with the state dump response
 
@@ -420,16 +420,16 @@ await admin.cellState( dna_hash, agent_hash );
     "source_chain": [
         {
             "signature": Uint8Array { 147, 39, 135 ... 4, 74, 245 ... 14 more bytes },
-            "header_address": new HeaderHash("uhCkkqfbahbSj7uMfVgiaTX5VONUWBycfy5qPKPRgrgbbGfqkTvrr"),
-            "header": {
+            "action_address": new ActionHash("uhCkkqfbahbSj7uMfVgiaTX5VONUWBycfy5qPKPRgrgbbGfqkTvrr"),
+            "action": {
                 "type": "Create",
                 "author": new AgentPubKey("uhCAkB2WJ6MDICYuakSxNbWm2yzf93WQLMHwbAJksVu2uFTD9U0Ef"),
                 "timestamp": [
                     1631125015,
                     117028920
                 ],
-                "header_seq": 5,
-                "prev_header": new HeaderHash("uhCkk6FU6LNO3nEnrqkI-tBUf_Wgyld7cRx3sAbm--CMIebAqAYbF"),
+                "action_seq": 5,
+                "prev_action": new ActionHash("uhCkk6FU6LNO3nEnrqkI-tBUf_Wgyld7cRx3sAbm--CMIebAqAYbF"),
                 "entry_type": {
                     "App": {
                         "id": 0,
