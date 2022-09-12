@@ -1,7 +1,7 @@
 let
-  holonixPath = builtins.fetchTarball { # main as of Mar 15, 2022
-    url = "https://github.com/holochain/holonix/archive/391557dc5b3065b0d357ea9f9a2bc77e7347be8e.tar.gz";
-    sha256 = "10dnbd3s8gm4bl7my7c168vyvi3358s1lb5yjnw3fwnp9z62vy09";
+  holonixPath = builtins.fetchTarball { # main as of Sep 1, 2022
+    url = "https://github.com/holochain/holonix/archive/a983ff292331d7553efadc5ab3916d5c2197dcee.tar.gz";
+    sha256 = "0zpkw7wppdxl3pznkb39i7svfhg8pc0ly87n89sxsczj1fb17028";
   };
   holonix = import (holonixPath) {
     include = {
@@ -14,8 +14,8 @@ let
     holochainVersionId = "custom";
     holochainVersion = {
       url = "https://github.com/holochain/holochain";
-      rev = "holochain-0.0.150"; # Jul 13, 2022 - 88813d781247c9db4d254063a604c22813013af5
-      sha256 = "1m3w0ik1bzsrz0qcm7vh0y4297w9fm2lcligzin2svch67a0mq7v";
+      rev = "holochain-0.0.161"; # Sep 8, 2022 - cf8adc073596f4f5fc3dcf31c30bc8ade47a6f93
+      sha256 = "0cjyqf08z3k5zqvrhgnl8qwni20ib7q2xyls14slf671b96l77f6";
       cargoLock = {
         outputHashes = {
         };
@@ -24,10 +24,10 @@ let
       binsFilter = [
         "holochain"
         "hc"
-        "kitsune-p2p-tx2-proxy"
+        # "kitsune-p2p-tx2-proxy"
       ];
 
-      rustVersion = "1.59.0";
+      rustVersion = "1.63.0";
 
       lair = {
         url = "https://github.com/holochain/lair";
@@ -38,7 +38,7 @@ let
           "lair-keystore"
         ];
 
-        rustVersion = "1.59.0";
+        rustVersion = "1.63.0";
 
         cargoLock = {
           outputHashes = {

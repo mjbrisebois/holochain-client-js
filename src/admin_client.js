@@ -138,12 +138,12 @@ class AdminClient {
     async registerDna ( path, options ) {
 	options				= Object.assign( {}, {
 	    "properties": null,
-	    "uid": null, // overrite bundle DNAs
+	    "network_seed": null, // overrite bundle DNAs
 	}, options );
 
 	let input			= {
 	    "properties": options.properties,
-	    "uid": options.uid,
+	    "network_seed": options.network_seed,
 	};
 
 	if ( path instanceof HoloHash )
@@ -175,7 +175,7 @@ class AdminClient {
     async installAppBundle ( app_id = null, agent_hash, path, options ) {
 	options				= Object.assign( {}, {
 	    "membrane_proofs": {},
-	    "uid": null, // overrite bundle DNAs
+	    "network_seed": null, // overrite bundle DNAs
 	}, options );
 
 	if ( app_id === "*" )
@@ -186,7 +186,7 @@ class AdminClient {
 	    "path": path,
 	    "agent_key": new AgentPubKey(agent_hash),
 	    "membrane_proofs": options.membrane_proofs,
-	    "uid": options.uid,
+	    "network_seed": options.network_seed,
 	});
 
 	return reformat_app_info( installation );
@@ -230,8 +230,8 @@ class AdminClient {
 	});
     }
 
-    // Even if no properties change, the Conductor will generate a UID so that it does not conflict
-    // with the Cell being cloned.
+    // Even if no properties change, the Conductor will generate a network seed so that it does not
+    // conflict with the Cell being cloned.
     async createCloneCell ( app_id, slot_id, dna_hash, agent_pubkey, options = {} ) { // -> bool
 	const input			= {
 	    "installed_app_id":	app_id,				// where to put new cell

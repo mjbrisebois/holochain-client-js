@@ -65,7 +65,7 @@ function basic_tests () {
 	log.normal("Register response: %s", dna_hash );
 
 	dna2_hash			= await admin.registerDna( TEST_DNA_PATH, {
-	    "uid": "something else",
+	    "network_seed": "something else",
 	}, {
 	    "properties": {},
 	});
@@ -154,7 +154,7 @@ function basic_tests () {
 
     it("should register DNA using existing DNA hash", async function () {
 	let diff_hash			= await admin.registerDna( dna_hash, {
-	    "uid": "different",
+	    "network_seed": "different",
 	});
 	log.normal("Register response: %s", diff_hash );
 
