@@ -9,7 +9,8 @@ const { ...ErrorTypes }			= require('./errors.js');
 const { AppSchema, DnaSchema }		= require('./schemas.js');
 const { Connection }			= require('./connection.js');
 const { ZomeApi }			= require('./zome_api.js');
-const { AdminClient }			= require('./admin_client.js');
+const { AdminClient,
+	reformat_cell_id }		= require('./admin_client.js');
 
 
 const DEFAULT_AGENT_CLIENT_OPTIONS	= {
@@ -37,7 +38,7 @@ class AgentClient {
 	    if ( agent === undefined )
 		agent			= cell.cell_id[1];
 
-	    app_schema[cell.role_id]	= cell.cell_id[0];
+	    app_schema[cell.role_name]	= cell.cell_id[0];
 	}
 
 	options.app_info		= app_info;
@@ -89,7 +90,7 @@ class AgentClient {
 	return value;
     }
 
-    async call ( dna_role_id, zome, func, payload, timeout ) {
+    async call ( dna_role_name, zome, func, payload, timeout ) {
 	if ( this._conn._opened === false ) {
 	    log.debug && log("Opening connection '%s' for AgentClient", this._conn.name );
 	    await this._conn.open();
@@ -98,7 +99,7 @@ class AgentClient {
 	const req_ctx			= {
 	    "start": new Date(),
 	    "end": null,
-	    "dna": dna_role_id,
+	    "dna": dna_role_name,
 	    "zome": zome,
 	    "func": func,
 	    "input": payload,
@@ -108,7 +109,7 @@ class AgentClient {
 	    },
 	};
 
-	let dna_schema			= this._app_schema.dna( dna_role_id );
+	let dna_schema			= this._app_schema.dna( dna_role_name );
 	let zome_api			= dna_schema.zome( zome );
 
 	payload				= await this._run_processors( "input", payload, req_ctx );
@@ -127,6 +128,35 @@ class AgentClient {
 	req_ctx.end			= new Date();
 
 	return result;
+    }
+
+    async _request ( ...args ) {
+	if ( this._conn._opened === false ) {
+	    log.debug && log("Opening connection '%s' for AdminClient", this._conn.name );
+	    await this._conn.open();
+	}
+
+	return await this._conn.request( ...args );
+    }
+
+    // Even if no properties change, the Conductor will generate a network seed so that it does not
+    // conflict with the Cell being cloned.
+    async createCloneCell ( app_id, role_name, modifiers, options = {} ) { // -> bool
+	if ( !(modifiers.network_seed || modifiers.properties || modifiers.origin_time) )
+	    throw new TypeError(`One of the DNA modifier opts is required: network_seed, properties, origin_time`);
+
+	const input			= {
+	    "app_id":		app_id,				// where to put new cell
+	    "role_name":	role_name,			// Role to clone
+	    "name":		options.name,			// Name for new cell
+	    "modifiers":	modifiers,			// Modifier opts
+	    "membrane_proof":	options.membrane_proof || null, // proof for DNA, if required
+	};
+	let installed_cell			= await this._request("create_clone_cell", input );
+
+	installed_cell.cell_id			= reformat_cell_id( installed_cell.cell_id );
+
+	return installed_cell;
     }
 
     async close ( timeout ) {

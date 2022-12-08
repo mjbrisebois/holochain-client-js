@@ -112,7 +112,7 @@ Create a new App installation for the given Agent using the given DNAs.
   - defaults to `null`
 - `agent_hash` - (*required*) a 39 byte `Uint8Array` that is an `AgentPubKey`
 - `dnas` - (*required*) an object of key/values that correspond to
-  - `key` - a DNA role ID for this DNA
+  - `key` - a DNA role name for this DNA
   - `value` - a 39 byte `Uint8Array` that is a registered `DnaHash`
 
 Returns a Promise that resolves with the installation details
@@ -134,7 +134,7 @@ await admin.installApp( "my-app", agent_hash, {
 //             }
 //         }
 //     },
-//     "slots": {
+//     "roles": {
 //         "memory": {
 //             "cell_id": [ dna_hash, agent_hash ],
 //         }
@@ -152,7 +152,7 @@ Create a new App installation for the given Agent using the given DNAs.
 - `path` - (*required*) file path for a app package
 - `options` - optional input
   - `options.membrane_proof` - an object of key/values that correspond to
-      - `key` - a DNA role ID matching one in the app manifest
+      - `key` - a DNA role name matching one in the app manifest
       - `value` - proof, if required by the DNA
   - `options.uid` - override UID in the DNA bundle manifest
     - defaults to `null`
@@ -173,7 +173,7 @@ await admin.installAppBundle( "my-app-bundle", agent_hash, "./memory.happ" );
 //             }
 //         }
 //     },
-//     "slots": {
+//     "roles": {
 //         "memory": {
 //             "cell_id": [ dna_hash, agent_hash ],
 //         }
@@ -211,7 +211,7 @@ await admin.enableApp( "my-app" );
 //         "status": {
 //             "running": null
 //         },
-//         "slots": {
+//         "roles": {
 //             "memory": {
 //                 "cell_id": [
 //                     DnaHash(39) [ 132,  45,  36, ... ],
@@ -251,11 +251,11 @@ await admin.disableApp( "my-app" );
 ```
 
 
-### `<AdminClient>.createCloneCell( app_id, slot_id, dna_hash, agent_pubkey, options ) -> Promise<object>`
+### `<AdminClient>.createCloneCell( app_id, role_name, dna_hash, agent_pubkey, options ) -> Promise<object>`
 Disable an installed App.
 
 - `app_id` - (*required*) an installed App ID
-- `slot_id` - (*required*) an installed App's slot ID
+- `role_name` - (*required*) an installed App's role name
 - `dna_hash` - (*required*) a DNA hash
 - `agent_pubkey` - (*required*) an Agent hash
 - `options` - optional input
@@ -338,7 +338,7 @@ await admin.listApps();
 //         "status": {
 //             "running": null
 //         },
-//         "slots": {
+//         "roles": {
 //             "memory": {
 //                 "cell_id": [ dna_hash, agent_hash ],
 //             }

@@ -20,10 +20,10 @@ function deprecation_notice ( msg ) {
 function reformat_app_info ( app_info ) {
     log.debug && log("Reformatting app info: %s", app_info.installed_app_id );
 
-    app_info.slots			= {};
-    for ( let slot of Object.values( app_info.cell_data ) ) {
-	app_info.slots[slot.role_id] = {
-	    "cell_id": reformat_cell_id( slot.cell_id ),
+    app_info.roles			= {};
+    for ( let role of Object.values( app_info.cell_data ) ) {
+	app_info.roles[role.role_name] = {
+	    "cell_id": reformat_cell_id( role.cell_id ),
 	};
     }
     delete app_info.cell_data;
@@ -135,15 +135,15 @@ class AdminClient {
 	return new AgentPubKey( await this._request("generate_agent_pub_key") );
     }
 
-    async registerDna ( path, options ) {
-	options				= Object.assign( {}, {
-	    "properties": null,
+    async registerDna ( path, modifiers ) {
+	modifiers			= Object.assign( {}, {
 	    "network_seed": null, // overrite bundle DNAs
-	}, options );
+	    "properties": null,
+	    "origin_time": null,
+	}, modifiers );
 
 	let input			= {
-	    "properties": options.properties,
-	    "network_seed": options.network_seed,
+	    modifiers,
 	};
 
 	if ( path instanceof HoloHash )
@@ -161,10 +161,10 @@ class AdminClient {
 	let installation		= await this._request("install_app", {
 	    "installed_app_id": app_id,
 	    "agent_key": new AgentPubKey(agent_hash),
-	    "dnas": Object.entries( dnas ).map( ([role_id, dna_hash]) => {
+	    "dnas": Object.entries( dnas ).map( ([role_name, dna_hash]) => {
 		return {
 		    "hash": new DnaHash(dna_hash),
-		    "role_id": role_id,
+		    "role_name": role_name,
 		};
 	    }),
 	});
@@ -228,22 +228,6 @@ class AdminClient {
 	return await this._request("start_app", {
 	    "installed_app_id": app_id,
 	});
-    }
-
-    // Even if no properties change, the Conductor will generate a network seed so that it does not
-    // conflict with the Cell being cloned.
-    async createCloneCell ( app_id, slot_id, dna_hash, agent_pubkey, options = {} ) { // -> bool
-	const input			= {
-	    "installed_app_id":	app_id,				// where to put new cell
-	    "role_id":		slot_id,			// role ID for new cell
-	    "dna_hash":		dna_hash,			// DNA to be cloned
-	    "agent_key":	agent_pubkey,			// Agent for cell
-	    "properties":	options.properties || null,	// new properties
-	    "membrane_proof":	options.membrane_proof || null, // proof for DNA, if required
-	};
-	let cell_id			= await this._request("create_clone_cell", input );
-
-	return reformat_cell_id( cell_id );
     }
 
     async listDnas () {
@@ -479,5 +463,7 @@ set_tostringtag( AdminClient, "AdminClient" );
 
 
 module.exports = {
+    reformat_cell_id,
+    reformat_cell_errors,
     AdminClient,
 };

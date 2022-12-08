@@ -60,18 +60,18 @@ function connection_tests () {
 	    "dnas": [
 		{
 		    "hash": dna_hash,
-		    "role_id": "memory",
+		    "role_name": "memory",
 		}
 	    ],
 	});
 	log.normal("Installed app '%s'", installation.installed_app_id );
-	for ( let role_id in installation.slots ) {
-	    let slot			= installation.slots[role_id];
+	for ( let role_name in installation.roles ) {
+	    let role			= installation.roles[role_name];
 	    log.silly("  - %s [ %s::%s ] (provisioned: %s) - %s clones (limit: %s) ", () => [
-		role_id,
-		new HoloHash( slot.base_cell_id[0] ),
-		new HoloHash( slot.base_cell_id[1] ),
-		slot.is_provisioned, slot.clones.length, slot.clone_limit
+		role_name,
+		new HoloHash( role.base_cell_id[0] ),
+		new HoloHash( role.base_cell_id[1] ),
+		role.is_provisioned, role.clones.length, role.clone_limit
 	    ]);
 	}
 

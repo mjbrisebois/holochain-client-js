@@ -79,9 +79,9 @@ function basic_tests () {
 	});
 	log.normal("Installed app '%s' [state: %s]", installation.installed_app_id, installation.status );
 
-	Object.entries( installation.slots ).forEach( ([role_id, slot]) => {
+	Object.entries( installation.roles ).forEach( ([role_name, role]) => {
 	    log.silly("  %s => %s", () => [
-		role_id.padEnd(15), slot.cell_id,
+		role_name.padEnd(15), role.cell_id,
 	    ]);
 	});
 
@@ -98,9 +98,9 @@ function basic_tests () {
 	let installation		= await admin.installAppBundle( `${TEST_APP_ID}-bundle`, agent_hash, TEST_HAPP_PATH );
 	log.normal("Installed app '%s' [state: %s]", installation.installed_app_id, installation.status );
 
-	Object.entries( installation.slots ).forEach( ([role_id, slot]) => {
+	Object.entries( installation.roles ).forEach( ([role_name, role]) => {
 	    log.silly("  %s => %s", () => [
-		role_id.padEnd(15), slot.cell_id,
+		role_name.padEnd(15), role.cell_id,
 	    ]);
 	});
 
@@ -127,22 +127,6 @@ function basic_tests () {
     it("should start app", async function () {
 	const resp			= await admin.startApp( TEST_APP_ID );
 	log.normal("Started app: %s", resp );
-    });
-
-    it("should create clone cell", async function () {
-	return this.skip();
-
-	const cell_id			= await admin.createCloneCell(
-	    TEST_APP_CLONES_ID, "storage", dna_hash, agent_hash, {
-		"properties": {
-		    "admin": String(agent_hash),
-		},
-	    }
-	);
-	console.log( json.debug(cell_id) );
-
-	expect( cell_id[0]		).to.not.deep.equal( dna_hash );
-	expect( cell_id[1]		).to.deep.equal( agent_hash );
     });
 
     it("should list DNAs", async function () {
@@ -251,14 +235,6 @@ function basic_tests () {
 	// log.silly("Cell agent info => %s", json.debug( agent_info ) );
 
 	expect( agent_info[0].agent	).to.deep.equal( agent_hash );
-    });
-
-    it("should fail to clone cell because clone limit", async function () {
-	await expect_reject( async () => {
-	    const cell_id		= await admin.createCloneCell(
-		TEST_APP_ID, "memory", dna_hash, agent_hash
-	    );
-	}, ConductorError, "CloneLimitExceeded" );
     });
 
     it("should disable app", async function () {

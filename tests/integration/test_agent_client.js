@@ -33,6 +33,9 @@ if ( process.env.LOG_LEVEL )
 const TEST_DNA_PATH			= path.join( __dirname, "../packs/memory.dna" );
 const TEST_APP_ID			= "test-app";
 
+const TEST_HAPP_CLONES_PATH		= path.join( __dirname, "../packs/storage_with_clones.happ" );
+const TEST_APP_CLONES_ID		= `${TEST_APP_ID}-bundle-clones`;
+
 let conductor;
 let dna_hash;
 let agent_hash;
@@ -111,6 +114,26 @@ function basic_tests () {
 	    await app.close();
 	}
     });
+
+    it("should create clone cell", async function () {
+	this.skip();
+
+	const app			= new AgentClient( agent_hash, {
+	    "memory": dna_hash,
+	}, app_port );
+
+	const cell_id			= await app.createCloneCell(
+	    TEST_APP_CLONES_ID, "storage", dna_hash, agent_hash, {
+		"properties": {
+		    "admin": String(agent_hash),
+		},
+	    }
+	);
+	console.log( json.debug(cell_id) );
+
+	expect( cell_id[0]		).to.not.deep.equal( dna_hash );
+	expect( cell_id[1]		).to.deep.equal( agent_hash );
+    });
 }
 
 function errors_tests () {
@@ -150,6 +173,25 @@ function errors_tests () {
     });
 
     // fail capability check
+
+    // fail cloning
+    it("should fail to clone cell because clone limit", async function () {
+	this.skip();
+
+	const app			= new AgentClient( agent_hash, {
+	    "memory": dna_hash,
+	}, app_port );
+
+	await expect_reject( async () => {
+	    const result		= await app.createCloneCell(
+		TEST_APP_CLONES_ID, "storage", {
+		    "network_seed": "different",
+		}
+	    );
+	    console.log( result );
+	}, ConductorError, "CloneLimitExceeded" );
+    });
+
 }
 
 describe("Integration: Agent Client", () => {
@@ -179,6 +221,10 @@ describe("Integration: Agent Client", () => {
 	    "memory": dna_hash,
 	});
 	await admin.enableApp( TEST_APP_ID );
+
+	let app_info			= await admin.installAppBundle( TEST_APP_CLONES_ID, agent_hash, TEST_HAPP_CLONES_PATH );
+	log.normal("Installed app '%s' [state: %s]", app_info.installed_app_id, app_info.status );
+
 
 	let app_iface			= await admin.attachAppInterface();
 	app_port			= app_iface.port;
