@@ -1,7 +1,7 @@
 
 const { TimeoutError }			= require('@whi/promise-timeout');
 const HoloHashTypes			= require('@whi/holo-hash');
-const { HoloHash }			= HoloHashTypes;
+const { HoloHash, AgentPubKey }		= HoloHashTypes;
 
 const { log,
 	set_tostringtag }		= require('./utils.js');
@@ -48,7 +48,7 @@ class AgentClient {
     }
 
     constructor ( agent, app_schema, connection, options ) {
-	this._agent			= agent;
+	this._agent			= new AgentPubKey( agent );
 	this._app_schema		= app_schema instanceof AppSchema
 	    ? app_schema
 	    : new AppSchema( app_schema );
@@ -63,6 +63,11 @@ class AgentClient {
 	this.app_info			= this._options.app_info || null;
 	this.pre_processors		= [];
 	this.post_processors		= [];
+	this.signing_handler		= zome_call => zome_call;
+    }
+
+    signingHandler ( handler ) {
+	this.signing_handler		= handler;
     }
 
     addProcessor ( event, callback ) {
@@ -120,6 +125,7 @@ class AgentClient {
 	    dna_schema.hash(),
 	    func,
 	    payload,
+	    this.signing_handler,
 	    timeout || this._options.timeout,
 	);
 

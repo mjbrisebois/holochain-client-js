@@ -10,14 +10,12 @@ node_modules:		package-lock.json
 build:			node_modules
 
 
-MOCHA_OPTS		= -t 5000
+MOCHA_OPTS		= -t 15000
 #
 # Testing
 #
-test:			build test-setup
-	npx mocha $(MOCHA_OPTS) --recursive ./tests
-test-debug:		build test-setup
-	LOG_LEVEL=silly npx mocha $(MOCHA_OPTS) --recursive ./tests
+test:			test-unit	test-integration	test-e2e
+test-debug:		test-unit-debug	test-integration-debug	test-e2e-debug
 
 test-unit:		build test-setup
 	npx mocha $(MOCHA_OPTS) ./tests/unit
