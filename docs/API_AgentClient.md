@@ -42,6 +42,18 @@ const client = new AgentClient( agent_hash, {
 }, 45678 );
 ```
 
+### `<AgentClient>.signingHandler( handler )`
+Register a handler for signing zome calls.
+
+- `handler` - (*required*) a function that receives the zome call input and returns the modified
+  zome call input.
+
+```javascript
+client.signingHandler( async zome_call_unsigned => {
+    zome_call_unsigned.signature = some_signing_method( zome_call_unsigned );
+    return zome_call_unsigned;
+});
+```
 
 ### `<AgentClient>.addProcessor( event, fn ) -> Promise<*>`
 Add a callback function for processing call input/output.
