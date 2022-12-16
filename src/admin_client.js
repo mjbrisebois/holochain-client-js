@@ -1,4 +1,5 @@
 
+const sha512				= require('js-sha512');
 const { decode }			= require('@msgpack/msgpack');
 const { HoloHash,
 	ActionHash,
@@ -11,6 +12,9 @@ const { log,
 const { DeprecationNotice }		= require('./errors.js');
 const { Connection }			= require('./connection.js');
 
+function hash_secret ( secret ) {
+    return new Uint8Array( sha512.digest( secret ) );
+}
 
 function deprecation_notice ( msg ) {
     const err				= new DeprecationNotice( msg );
@@ -91,10 +95,10 @@ class AdminClient {
     static APPS_STOPPED			= "Stopped";
     static APPS_PAUSED			= "Paused";
 
-    constructor ( connection ) {
+    constructor ( connection, opts = {} ) {
 	this._conn			= connection instanceof Connection
 	    ? port
-	    : new Connection( connection, { "name": "admin" });
+	    : new Connection( connection, { "name": "admin", ...opts });
     }
 
     async _request ( ...args ) {
@@ -137,9 +141,10 @@ class AdminClient {
 
     async registerDna ( path, modifiers ) {
 	modifiers			= Object.assign( {}, {
-	    "network_seed": null, // overrite bundle DNAs
-	    "properties": null,
-	    "origin_time": null,
+	    "network_seed": null, // String
+	    "properties": null, // Object or msgpacked bytes?
+	    "origin_time": null, // Timestamp
+	    "quantum_time": null, // Duration
 	}, modifiers );
 
 	let input			= {
@@ -154,25 +159,7 @@ class AdminClient {
 	return new DnaHash( await this._request("register_dna", input ) );
     }
 
-    async installApp ( app_id = null, agent_hash, dnas ) {
-	if ( !app_id )
-	    app_id			= ( Math.random() * 1e17 ).toString(16).slice(-8);
-
-	let installation		= await this._request("install_app", {
-	    "installed_app_id": app_id,
-	    "agent_key": new AgentPubKey(agent_hash),
-	    "dnas": Object.entries( dnas ).map( ([role_name, dna_hash]) => {
-		return {
-		    "hash": new DnaHash(dna_hash),
-		    "role_name": role_name,
-		};
-	    }),
-	});
-
-	return reformat_app_info( installation );
-    }
-
-    async installAppBundle ( app_id = null, agent_hash, path, options ) {
+    async installApp ( app_id, agent_hash, happ_bundle, options ) {
 	options				= Object.assign( {}, {
 	    "membrane_proofs": {},
 	    "network_seed": null, // overrite bundle DNAs
@@ -181,13 +168,28 @@ class AdminClient {
 	if ( app_id === "*" )
 	    app_id			= ( Math.random() * 1e17 ).toString(16).slice(0,8);
 
-	let installation		= await this._request("install_app_bundle", {
+	const input			= {
 	    "installed_app_id": app_id,
-	    "path": path,
 	    "agent_key": new AgentPubKey(agent_hash),
 	    "membrane_proofs": options.membrane_proofs,
 	    "network_seed": options.network_seed,
-	});
+	};
+
+	if ( typeof happ_bundle === "string" )
+	    input.path			= happ_bundle;
+	else if ( typeof happ_bundle === "object" && happ_bundle !== null )
+	    input.bundle		= happ_bundle;
+	else
+	    throw new TypeError(`Unknown hApp bundle type '${typeof happ_bundle}'; expected a String or Uint8Array`);
+
+	// Temporary fix for a bug in mr_bundle
+	if ( input.bundle ) {
+	    for ( let rpath in input.bundle.resources ) {
+		input.bundle.resources[ rpath ]	= Array.from( input.bundle.resources[ rpath ] );
+	    }
+	}
+
+	const installation		= await this._request("install_app", input );
 
 	return reformat_app_info( installation );
     }
@@ -449,6 +451,73 @@ class AdminClient {
 
 	log.debug && log("Infos (%s): %s", infos.length, infos );
 	return infos;
+    }
+
+    async grantCapability ( tag, agent, dna, functions, secret, assignees ) {
+	if ( assignees !== undefined )
+	    return await this.grantAssignedCapability( tag, agent, dna, functions, secret, assignees );
+	else if ( secret !== undefined )
+	    return await this.grantTransferableCapability( tag, agent, dna, functions, secret );
+	else
+	    return await this.grantUnrestrictedCapability( tag, agent, dna, functions );
+    }
+
+    async grantUnrestrictedCapability ( tag, agent, dna, functions ) {
+	await this._request("grant_zome_call_capability", {
+	    "cell_id": [ dna, agent ],
+	    "cap_grant": {
+		"tag": tag,
+		"functions": functions,
+		"access": {
+		    "Unrestricted": null,
+		},
+	    },
+	});
+
+	return true;
+    }
+
+    async grantTransferableCapability ( tag, agent, dna, functions, secret ) {
+	// if secret is a string, hash it so it meets the 512 bit requirement
+	if ( typeof secret === "string" )
+	    secret			= hash_secret( secret );
+
+	await this._request("grant_zome_call_capability", {
+	    "cell_id": [ dna, agent ],
+	    "cap_grant": {
+		"tag": tag,
+		"functions": functions,
+		"access": {
+		    "Transferable": {
+			"secret": secret,
+		    },
+		},
+	    },
+	});
+
+	return true;
+    }
+
+    async grantAssignedCapability ( tag, agent, dna, functions, secret, agents ) {
+	// if secret is a string, hash it so it meets the 512 bit requirement
+	if ( typeof secret === "string" )
+	    secret			= hash_secret( secret );
+
+	await this._request("grant_zome_call_capability", {
+	    "cell_id": [ dna, agent ],
+	    "cap_grant": {
+		"tag": tag,
+		"functions": functions,
+		"access": {
+		    "Transferable": {
+			"secret": secret,
+			"assignees": agents,
+		    },
+		},
+	    },
+	});
+
+	return true;
     }
 
     async close ( timeout ) {

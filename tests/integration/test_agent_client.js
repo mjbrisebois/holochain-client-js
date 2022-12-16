@@ -7,9 +7,11 @@ global.WebSocket			= require('ws');
 
 const why				= require('why-is-node-running');
 const expect				= require('chai').expect;
+const nacl				= require('tweetnacl');
+const { hashZomeCall }			= require('@whi/holochain-zome-call-hashing');
 const { encode, decode }		= require('@msgpack/msgpack');
 const { Holochain }			= require('@whi/holochain-backdrop');
-const { HoloHash }			= require('@whi/holo-hash');
+const { HoloHash, AgentPubKey }		= require('@whi/holo-hash');
 
 const { expect_reject }			= require('./utils.js');
 const { Connection,
@@ -30,7 +32,7 @@ if ( process.env.LOG_LEVEL )
     hc_client.logging();
 
 
-const TEST_DNA_PATH			= path.join( __dirname, "../packs/memory.dna" );
+const TEST_HAPP_PATH			= path.join( __dirname, "../packs/storage.happ" );
 const TEST_APP_ID			= "test-app";
 
 const TEST_HAPP_CLONES_PATH		= path.join( __dirname, "../packs/storage_with_clones.happ" );
@@ -38,14 +40,14 @@ const TEST_APP_CLONES_ID		= `${TEST_APP_ID}-bundle-clones`;
 
 let conductor;
 let dna_hash;
-let agent_hash;
+let cell_agent_hash;
 let app_port;
 
 
 function basic_tests () {
     it("should create AgentClient with existing connection", async function () {
 	const conn			= new Connection( app_port );
-	const app			= new AgentClient( agent_hash, {
+	const app			= new AgentClient( cell_agent_hash, {
 	    "memory": dna_hash,
 	}, conn );
 
@@ -62,9 +64,14 @@ function basic_tests () {
     });
 
     it("should create AgentClient with new connection", async function () {
-	const app			= new AgentClient( agent_hash, {
+	const app			= new AgentClient( cell_agent_hash, {
 	    "memory": dna_hash,
 	}, app_port );
+
+	const app_info			= await app.appInfo( TEST_APP_ID );
+
+	expect( app_info.installed_app_id	).to.equal( TEST_APP_ID );
+	expect( app_info.cell_data		).to.have.length( 1 );
 
 	try {
 	    let essence			= await app.call(
@@ -92,7 +99,7 @@ function basic_tests () {
 	const app			= await AgentClient.createFromAppInfo( TEST_APP_ID, app_port );
 
 	app.addProcessor("output", function (essence) {
-	    expect( this.dna		).to.equal("memory");
+	    expect( this.dna		).to.equal("storage");
 	    expect( this.zome		).to.equal("mere_memory");
 	    expect( this.func		).to.equal("save_bytes");
 
@@ -105,7 +112,7 @@ function basic_tests () {
 
 	try {
 	    let result			= await app.call(
-		"memory", "mere_memory", "save_bytes", Buffer.from("Super important bytes")
+		"storage", "mere_memory", "save_bytes", Buffer.from("Super important bytes")
 	    );
 
 	    log.normal("Save bytes response: %s", result );
@@ -115,24 +122,82 @@ function basic_tests () {
 	}
     });
 
+    it("should create AgentClient with custom agent/signing", async function () {
+	const key_pair			= nacl.sign.keyPair();
+	const app			= new AgentClient( cell_agent_hash, {
+	    "memory": dna_hash,
+	}, app_port, {
+	    "agent": new AgentPubKey( key_pair.publicKey ),
+	    "signingHandler": async ( zome_call_request ) => {
+		const zome_call_hash	= await hashZomeCall( zome_call_request );
+
+		zome_call_request.signature	= nacl.sign( zome_call_hash, key_pair.secretKey )
+		    .subarray( 0, nacl.sign.signatureLength );
+
+		return zome_call_request;
+	    },
+	});
+
+	try {
+	    let essence			= await app.call(
+		"memory", "mere_memory", "save_bytes", Buffer.from("Super important bytes")
+	    );
+
+	    let result			= new HoloHash( essence.payload );
+	    log.normal("Save bytes response: %s", result );
+	} finally {
+	    await app.close();
+	}
+    });
+
+    it("should create AgentClient then set capability agent", async function () {
+	const key_pair			= nacl.sign.keyPair();
+	const app			= new AgentClient( cell_agent_hash, {
+	    "memory": dna_hash,
+	}, app_port );
+
+	app.setCapabilityAgent(
+	    new AgentPubKey( key_pair.publicKey ),
+	    async ( zome_call_request ) => {
+		const zome_call_hash	= await hashZomeCall( zome_call_request );
+
+		zome_call_request.signature	= nacl.sign( zome_call_hash, key_pair.secretKey )
+		    .subarray( 0, nacl.sign.signatureLength );
+
+		return zome_call_request;
+	    }
+	);
+
+	try {
+	    let essence			= await app.call(
+		"memory", "mere_memory", "save_bytes", Buffer.from("Super important bytes")
+	    );
+
+	    let result			= new HoloHash( essence.payload );
+	    log.normal("Save bytes response: %s", result );
+	} finally {
+	    await app.close();
+	}
+    });
+
     it("should create clone cell", async function () {
 	this.skip();
 
-	const app			= new AgentClient( agent_hash, {
+	const app			= new AgentClient( cell_agent_hash, {
 	    "memory": dna_hash,
 	}, app_port );
 
 	const cell_id			= await app.createCloneCell(
-	    TEST_APP_CLONES_ID, "storage", dna_hash, agent_hash, {
+	    TEST_APP_CLONES_ID, "storage", dna_hash, cell_agent_hash, {
 		"properties": {
-		    "admin": String(agent_hash),
+		    "admin": String(cell_agent_hash),
 		},
 	    }
 	);
 	console.log( json.debug(cell_id) );
 
 	expect( cell_id[0]		).to.not.deep.equal( dna_hash );
-	expect( cell_id[1]		).to.deep.equal( agent_hash );
+	expect( cell_id[1]		).to.deep.equal( cell_agent_hash );
     });
 }
 
@@ -141,7 +206,7 @@ function errors_tests () {
 
     beforeEach(async () => {
 	log.info("Creating AgentClient for error tests");
-	app				= new AgentClient( agent_hash, {
+	app				= new AgentClient( cell_agent_hash, {
 	    "memory": dna_hash,
 	}, app_port );
     });
@@ -158,6 +223,13 @@ function errors_tests () {
 	await expect_reject( async () => {
 	    await app.call("memory", "mere_memory", "nonexistent");
 	}, RibosomeError, "zome function that doesn't exist" );
+    });
+
+    // zome function not granted
+    it("should fail because zome function not in grant", async function () {
+	await expect_reject( async () => {
+	    await app.call("memory", "mere_memory", "notgranted", {}, 10 );
+	}, ZomeCallUnauthorizedError, "not authorized with reason BadCapGrant" );
     });
 
     // zome function invalid input
@@ -178,7 +250,7 @@ function errors_tests () {
     it("should fail to clone cell because clone limit", async function () {
 	this.skip();
 
-	const app			= new AgentClient( agent_hash, {
+	const app			= new AgentClient( cell_agent_hash, {
 	    "memory": dna_hash,
 	}, app_port );
 
@@ -215,16 +287,20 @@ describe("Integration: Agent Client", () => {
 
 	const port			= conductor.adminPorts()[0];
 	const admin			= new AdminClient( port );
-	agent_hash			= await admin.generateAgent();;
-	dna_hash			= await admin.registerDna( TEST_DNA_PATH );
-	let installation		= await admin.installApp( TEST_APP_ID, agent_hash, {
-	    "memory": dna_hash,
-	});
+	cell_agent_hash			= await admin.generateAgent();;
+
+	let installation		= await admin.installApp( TEST_APP_ID, cell_agent_hash, TEST_HAPP_PATH );
 	await admin.enableApp( TEST_APP_ID );
 
-	let app_info			= await admin.installAppBundle( TEST_APP_CLONES_ID, agent_hash, TEST_HAPP_CLONES_PATH );
+	dna_hash			= installation.roles.storage.cell_id[0];
+
+	let app_info			= await admin.installApp( TEST_APP_CLONES_ID, cell_agent_hash, TEST_HAPP_CLONES_PATH );
 	log.normal("Installed app '%s' [state: %s]", app_info.installed_app_id, app_info.status );
 
+	await admin.grantUnrestrictedCapability( "allow-all-for-testing", cell_agent_hash, dna_hash, [
+	    [ "mere_memory", "save_bytes" ],
+	    [ "mere_memory", "nonexistent" ],
+	]);
 
 	let app_iface			= await admin.attachAppInterface();
 	app_port			= app_iface.port;

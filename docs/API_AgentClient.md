@@ -3,7 +3,21 @@
 
 # API Reference for `AgentClient` class
 
-## `AgentClient.createFromAppInfo( app_id, connection, timeout, opts )`
+## `AgentClient.appInfo( app_id, connection, timeout ) -> Promise<object>`
+Create a client using the data fetched via an app info request.
+
+- `app_id` - (*required*) the installed App ID
+- `connection` - (*required*) either
+  - an instance of `Connection`
+  - or, it is used as the input for `new Connection( connection )`
+- `timeout` - (*optional*) timeout used for fetching app info
+
+Example
+```javascript
+const app_info = await AgentClient.appInfo( "my-app-bundle", 45678 );
+```
+
+## `AgentClient.createFromAppInfo( app_id, connection, timeout, opts ) -> Promise<AgentClient>`
 Create a client using the data fetched via an app info request.
 
 - `app_id` - (*required*) the installed App ID
@@ -31,6 +45,9 @@ A class for communicating with Conductor's App interface with a specific Agent.
   - or, it is used as the input for `new Connection( connection )`
 - `options` - optional parameters
 - `options.timeout` - timeout in milliseconds used as the default for requests via this client
+- `options.capability_agent` - a 39 byte `Uint8Array` that will be set as the signing agent
+- `options.signing_handler` - a function for signing zome call input (see
+  [`setCapabilityAgent()`](#agentclientsetcapabilityagent-agent-handler-))
 
 Example
 ```javascript
@@ -42,16 +59,79 @@ const client = new AgentClient( agent_hash, {
 }, 45678 );
 ```
 
-### `<AgentClient>.signingHandler( handler )`
+### `<AgentClient>.appInfo( app_id ) -> Promise<object>`
+Alias for `AgentClient.appInfo( app_id, connection )` where this Client's connection will be
+automatically used.
+
+### `<AgentClient>.cellAgent( agent )`
+Get or set the Cell Agent used as the `AgentPubKey` in Cell IDs.
+
+- `agent` - (*optional*) a 39 byte `Uint8Array` that is an `AgentPubKey`
+
+### `<AgentClient>.capabilityAgent( agent )`
+Get or set the Capability Agent used as the signing Agent.
+
+- `agent` - (*optional*) a 39 byte `Uint8Array` that is an `AgentPubKey`
+
+### `<AgentClient>.setSigningHandler( handler )`
 Register a handler for signing zome calls.
 
 - `handler` - (*required*) a function that receives the zome call input and returns the modified
   zome call input.
 
+Example use-case for the Holochain Launcher
 ```javascript
-client.signingHandler( async zome_call_unsigned => {
-    zome_call_unsigned.signature = some_signing_method( zome_call_unsigned );
-    return zome_call_unsigned;
+const { invoke } = require('@tauri-apps/api/tauri');
+
+client.setSigningHandler( async zome_call_request => {
+    zome_call_request.provenance = Array.from( zome_call_request.provenance );
+    zome_call_request.cell_id = [
+        Array.from( zome_call_request.cell_id[0] ),
+        Array.from( zome_call_request.cell_id[1] ),
+    ];
+    zome_call_request.payload = Array.from( zome_call_request.payload );
+    zome_call_request.nonce = Array.from( zome_call_request.nonce );
+
+    const signedZomeCall = await invoke("sign_zome_call", {
+        "zomeCallUnsigned": zome_call_request,
+    });
+
+    signedZomeCall.cap_secret = null;
+    signedZomeCall.provenance = Uint8Array.from( signedZomeCall.provenance );
+    signedZomeCall.cell_id = [
+        Uint8Array.from( signedZomeCall.cell_id[0] ),
+        Uint8Array.from( signedZomeCall.cell_id[1] ),
+    ];
+    signedZomeCall.payload = Uint8Array.from( signedZomeCall.payload );
+    signedZomeCall.signature = Uint8Array.from( signedZomeCall.signature || [] );
+    signedZomeCall.nonce = Uint8Array.from( signedZomeCall.nonce );
+
+    return signedZomeCall;
+});
+```
+
+### `<AgentClient>.setCapabilityAgent( agent, handler )`
+Register a handler for signing zome calls.
+
+- `agent` - (*required*) a 39 byte `Uint8Array` that is an `AgentPubKey`
+- `handler` - (*required*) a function that receives the zome call input and returns the modified
+  zome call input.
+
+```javascript
+const nacl = require('tweetnacl');
+const key_pair = nacl.sign.keyPair();
+const { hashZomeCall } = require('@whi/holochain-zome-call-hashing');
+
+client.setCapabilityAgent(
+    new AgentPubKey( key_pair.publicKey ),
+    async zome_call_request => {
+        const zome_call_hash = await hashZomeCall( zome_call_request );
+
+        zome_call_request.signature	= nacl.sign( zome_call_hash, key_pair.secretKey )
+            .subarray( 0, nacl.sign.signatureLength );
+
+        return zome_call_request;
+    }
 });
 ```
 

@@ -8,17 +8,17 @@ const FILENAME			= process.env.FILENAME || "holochain-client.prod.js";
 module.exports = {
     target: 'web',
     mode: WEBPACK_MODE,
-    entry: [ './src/index.js' ],
+    entry: [ './src/bootstrap.js' ],
+    experiments: {
+	asyncWebAssembly: true,
+    },
     resolve: {
-	mainFields: ["main"],
+	mainFields: ["module", "main"],
     },
     output: {
 	filename:	FILENAME,
 	globalObject:	"this",
-	library: {
-	    "name":	"HolochainClient",
-	    "type":	"umd",
-	},
+	libraryTarget: "window",
     },
     stats: {
 	colors: true

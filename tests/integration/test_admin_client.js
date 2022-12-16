@@ -7,9 +7,10 @@ global.WebSocket			= require('ws');
 
 const why				= require('why-is-node-running');
 const expect				= require('chai').expect;
+const nacl				= require('tweetnacl');
 const { encode, decode }		= require('@msgpack/msgpack');
 const { Holochain }			= require('@whi/holochain-backdrop');
-const { HoloHash }			= require('@whi/holo-hash');
+const { HoloHash, AgentPubKey }		= require('@whi/holo-hash');
 const json				= require('@whi/json');
 
 const { expect_reject }			= require('./utils.js');
@@ -34,7 +35,7 @@ const TEST_DNA_PATH			= path.join( __dirname, "../packs/memory.dna" );
 const TEST_HAPP_PATH			= path.join( __dirname, "../packs/storage.happ" );
 const TEST_HAPP_CLONES_PATH		= path.join( __dirname, "../packs/storage_with_clones.happ" );
 const TEST_APP_ID			= "test-app";
-const TEST_APP_CLONES_ID		= `${TEST_APP_ID}-bundle-clones`;
+const TEST_APP_CLONES_ID		= `${TEST_APP_ID}-clones`;
 
 let conductor;
 let admin;
@@ -60,22 +61,9 @@ function basic_tests () {
 	log.normal("Agent response: %s", agent_hash );
     });
 
-    it("should register DNA", async function () {
-	dna_hash			= await admin.registerDna( TEST_DNA_PATH );
-	log.normal("Register response: %s", dna_hash );
-
-	dna2_hash			= await admin.registerDna( TEST_DNA_PATH, {
-	    "network_seed": "something else",
-	}, {
-	    "properties": {},
-	});
-	log.normal("Register response: %s", dna_hash );
-    });
-
     it("should install app", async function () {
-	let installation		= await admin.installApp( TEST_APP_ID, agent_hash, {
-	    "memory": dna_hash,
-	    "memory2": dna2_hash,
+	let installation		= await admin.installApp( `${TEST_APP_ID}`, agent_hash, TEST_HAPP_PATH, {
+	    "network_seed": "some_network_seed",
 	});
 	log.normal("Installed app '%s' [state: %s]", installation.installed_app_id, installation.status );
 
@@ -85,34 +73,17 @@ function basic_tests () {
 	    ]);
 	});
 
+	dna_hash			= installation.roles.storage.cell_id[0];
+
 	{
-	    let app_info		= await admin.installApp( null, agent_hash, {
-		"memory": dna_hash,
-	    });
+	    let app_info		= await admin.installApp( "*", agent_hash, TEST_HAPP_PATH );
 
 	    expect( app_info.installed_app_id ).to.have.length( 8 );
 	}
     });
 
-    it("should install app bundle", async function () {
-	let installation		= await admin.installAppBundle( `${TEST_APP_ID}-bundle`, agent_hash, TEST_HAPP_PATH );
-	log.normal("Installed app '%s' [state: %s]", installation.installed_app_id, installation.status );
-
-	Object.entries( installation.roles ).forEach( ([role_name, role]) => {
-	    log.silly("  %s => %s", () => [
-		role_name.padEnd(15), role.cell_id,
-	    ]);
-	});
-
-	{
-	    let app_info		= await admin.installAppBundle( "*", agent_hash, TEST_HAPP_PATH );
-
-	    expect( app_info.installed_app_id ).to.have.length( 8 );
-	}
-    });
-
-    it("should install app bundle with clones", async function () {
-	let app_info			= await admin.installAppBundle( TEST_APP_CLONES_ID, agent_hash, TEST_HAPP_CLONES_PATH );
+    it("should install app with clones", async function () {
+	let app_info			= await admin.installApp( TEST_APP_CLONES_ID, agent_hash, TEST_HAPP_CLONES_PATH );
 	log.normal("Installed app '%s' [state: %s]", app_info.installed_app_id, app_info.status );
 
 	expect( app_info.installed_app_id	).to.equal( TEST_APP_CLONES_ID );
@@ -136,21 +107,53 @@ function basic_tests () {
 	expect( dnas.map(String)	).to.include( dna_hash.toString() );
     });
 
-    it("should register DNA using existing DNA hash", async function () {
-	let diff_hash			= await admin.registerDna( dna_hash, {
-	    "network_seed": "different",
-	});
-	log.normal("Register response: %s", diff_hash );
+    it("should register DNAs", async function () {
+	const dna_hash			= await admin.registerDna( TEST_DNA_PATH );
+	log.normal("Register response: %s", dna_hash );
 
-	expect( diff_hash		).to.not.deep.equal( dna_hash );
+	const mod1_hash			= await admin.registerDna( TEST_DNA_PATH, {
+	    "network_seed": "something else",
+	});
+
+	log.normal("Register response: %s", mod1_hash );
+	expect( mod1_hash		).to.not.deep.equal( dna_hash );
+
+	const mod2_hash			= await admin.registerDna( TEST_DNA_PATH, {
+	    "network_seed": "something else",
+	    "properties": { "foo": "bar" },
+	});
+
+	log.normal("Register response: %s", mod2_hash );
+	expect( mod2_hash		).to.not.deep.equal( mod1_hash );
+
+	const mod3_hash			= await admin.registerDna( TEST_DNA_PATH, {
+	    "network_seed": "something else",
+	    "properties": { "foo": "bar" },
+	    "origin_time": Date.now(),
+	});
+
+	log.normal("Register response: %s", mod3_hash );
+	expect( mod3_hash		).to.not.deep.equal( mod2_hash );
+
+	const mod4_hash			= await admin.registerDna( TEST_DNA_PATH, {
+	    "network_seed": "something else",
+	    "properties": { "foo": "bar" },
+	    "origin_time": Date.now(),
+	    "quantum_time": [ 1, 2 ],
+	});
+
+	log.normal("Register response: %s", mod4_hash );
+	expect( mod4_hash		).to.not.deep.equal( mod3_hash );
+
+	const dnas			= await admin.listDnas();
+
+	expect( dnas			).to.have.length( 6 );
     });
 
     it("should list cells", async function () {
 	const cells			= await admin.listCells();
-	const dnas			= cells.map( cell => String(cell[0]) );
 
-	expect( cells			).to.have.length( 2 );
-	expect( dnas			).to.include( dna_hash.toString() );
+	expect( cells			).to.have.length( 1 );
     });
 
     it("should list apps", async function () {
@@ -168,13 +171,13 @@ function basic_tests () {
 	{
 	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_DISABLED );
 
-	    expect( filtered_apps	).to.have.length( 4 );
+	    expect( filtered_apps	).to.have.length( 2 );
 	}
 
 	{
 	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_STOPPED );
 
-	    expect( filtered_apps	).to.have.length( 4 );
+	    expect( filtered_apps	).to.have.length( 2 );
 	}
 
 	{
@@ -201,8 +204,51 @@ function basic_tests () {
     it("should request agent info", async function () {
 	const agents			= await admin.requestAgentInfo();
 
-	expect( agents			).to.have.length( 2 );
+	expect( agents			).to.have.length( 1 );
 	expect( agents[0].agent		).to.deep.equal( agent_hash );
+    });
+
+    it("should get cell state", async function () {
+	const state			= await admin.cellState( dna_hash, agent_hash );
+
+	// log.silly("Cell state dump => %s", json.debug( state ) );
+
+	expect( state.source_chain	).to.have.length.gte( 2 );
+    });
+
+    it("should get agent info", async function () {
+	const agent_info		= await admin.requestAgentInfo([ dna_hash, agent_hash ]);
+
+	// log.silly("Cell agent info => %s", json.debug( agent_info ) );
+
+	expect( agent_info[0].agent	).to.deep.equal( agent_hash );
+    });
+
+    it("should grant assigned capability", async function () {
+	const key_pair			= nacl.sign.keyPair();
+	const succeeded			= await admin.grantCapability( "tag-name", agent_hash, dna_hash, [
+	    [ "zome_name", "fn_name" ],
+	], "super_secret_password", [
+	    new AgentPubKey( key_pair.publicKey )
+	] );
+
+	expect( succeeded		).to.be.true;
+    });
+
+    it("should grant transferable capability", async function () {
+	const succeeded			= await admin.grantCapability( "tag-name", agent_hash, dna_hash, [
+	    [ "zome_name", "fn_name" ],
+	], "super_secret_password" );
+
+	expect( succeeded		).to.be.true;
+    });
+
+    it("should grant unrestricted capability", async function () {
+	const succeeded			= await admin.grantCapability( "tag-name", agent_hash, dna_hash, [
+	    [ "mere_memory", "save_bytes" ],
+	]);
+
+	expect( succeeded		).to.be.true;
     });
 
     it("should call zome function", async function () {
@@ -219,22 +265,6 @@ function basic_tests () {
 	} finally {
 	    await app.close();
 	}
-    });
-
-    it("should get cell state", async function () {
-	const state			= await admin.cellState( dna_hash, agent_hash );
-
-	// log.silly("Cell state dump => %s", json.debug( state ) );
-
-	expect( state.source_chain	).to.have.length.gte( 3 );
-    });
-
-    it("should get agent info", async function () {
-	const agent_info		= await admin.requestAgentInfo([ dna_hash, agent_hash ]);
-
-	// log.silly("Cell agent info => %s", json.debug( agent_info ) );
-
-	expect( agent_info[0].agent	).to.deep.equal( agent_hash );
     });
 
     it("should disable app", async function () {
@@ -256,13 +286,13 @@ function basic_tests () {
 	{
 	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_DISABLED );
 
-	    expect( filtered_apps	).to.have.length( 5 );
+	    expect( filtered_apps	).to.have.length( 3 );
 	}
 
 	{
 	    const filtered_apps		= await admin.listApps( admin.constructor.APPS_STOPPED );
 
-	    expect( filtered_apps	).to.have.length( 5 );
+	    expect( filtered_apps	).to.have.length( 3 );
 	}
 
 	{
@@ -296,17 +326,6 @@ function errors_tests () {
 	await expect_reject( async () => {
 	    await admin.registerDna( "./non-existent.dna" );
 	}, ConductorError, "No such file or directory" );
-    });
-
-    // install: non-existent DNA hash
-    it("should fail to install because bad hash", async function () {
-	await expect_reject( async () => {
-	    let bad_hash		= new Uint8Array(32);
-
-	    await admin.installApp( "failed-install", agent_hash, {
-		"bad": bad_hash,
-	    });
-	}, DnaReadError, "has not been registered" );
     });
 
     // activate: non-existent app ID

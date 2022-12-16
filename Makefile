@@ -57,6 +57,7 @@ clean-files-all-force:	clean-remove-chaff
 # NPM packaging
 #
 prepare-package:
+	rm -f dist/*
 	FILENAME=holochain-client.js WEBPACK_MODE=development npm run build
 	npm run build
 	gzip -kf dist/*.js

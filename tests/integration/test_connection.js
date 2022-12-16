@@ -7,14 +7,14 @@ global.WebSocket			= require('ws');
 
 const why				= require('why-is-node-running');
 const expect				= require('chai').expect;
+const nacl				= require('tweetnacl');
 const { encode, decode }		= require('@msgpack/msgpack');
+const { HoloHash, AgentPubKey }		= require('@whi/holo-hash');
 const { Holochain }			= require('@whi/holochain-backdrop');
-const { HoloHash }			= require('@whi/holo-hash');
+const { hashZomeCall }			= require('@whi/holochain-zome-call-hashing');
 
 const { expect_reject }			= require('./utils.js');
 const { Connection,
-	AdminClient,
-	AgentClient,
 
 	DeserializationError,
 	TimeoutError,
@@ -24,7 +24,7 @@ if ( process.env.LOG_LEVEL )
     hc_client.logging();
 
 
-const TEST_DNA_PATH			= path.join( __dirname, "../packs/memory.dna" );
+const TEST_HAPP_PATH			= path.join( __dirname, "../packs/storage.happ" );
 const TEST_APP_ID			= "test-app";
 
 let conductor;
@@ -49,22 +49,16 @@ function connection_tests () {
 	agent_hash			= new HoloHash( await conn.request("generate_agent_pub_key") );
 	log.normal("Agent response: %s", agent_hash );
 
-	dna_hash			= new HoloHash( await conn.request("register_dna", {
-	    "path": TEST_DNA_PATH,
-	}) );
-	log.normal("Register response: %s", dna_hash );
-
 	let installation		= await conn.request("install_app", {
 	    "installed_app_id": TEST_APP_ID,
 	    "agent_key": agent_hash,
-	    "dnas": [
-		{
-		    "hash": dna_hash,
-		    "role_name": "memory",
-		}
-	    ],
+	    "membrane_proofs": {},
+	    "path": TEST_HAPP_PATH,
 	});
 	log.normal("Installed app '%s'", installation.installed_app_id );
+
+	dna_hash			= installation.cell_data[0].cell_id[0];
+
 	for ( let role_name in installation.roles ) {
 	    let role			= installation.roles[role_name];
 	    log.silly("  - %s [ %s::%s ] (provisioned: %s) - %s clones (limit: %s) ", () => [
@@ -81,20 +75,43 @@ function connection_tests () {
 	log.normal("Enable app");
     });
 
+    it("should grant unrestricted zome calling for all functions", async function () {
+	const cap_grant			= await conn.request("grant_zome_call_capability", {
+	    "cell_id": [ dna_hash, agent_hash ],
+	    "cap_grant": {
+		"tag": "unrestricted-zome-calling",
+		"functions": [
+		    [ "mere_memory", "save_bytes" ],
+		],
+		"access": {
+		    "Unrestricted": null,
+		},
+	    },
+	});
+    });
+
     it("should call zome function via app interface", async function () {
+	const key_pair			= nacl.sign.keyPair();
 	const zome_call_request		= {
 	    "cap":		null,
 	    "cell_id":		[ dna_hash, agent_hash ],
 	    "zome_name":	"mere_memory", // if the zome doesn't exist it never responds
 	    "fn_name":		"save_bytes", // if the function doesn't exist it is RibosomeError
 	    "payload":		encode( Buffer.from("Super important bytes") ),
-	    "provenance":	agent_hash,
+	    "provenance":	new AgentPubKey( key_pair.publicKey ),
+	    "nonce":		nacl.randomBytes( 32 ),
+	    "expires_at":	(Date.now() + (5 * 60 * 1_000)) * 1_000,
 	};
+	const zome_call_hash		= await hashZomeCall( zome_call_request );
+
+	zome_call_request.signature	= nacl.sign( zome_call_hash, key_pair.secretKey )
+	    .subarray( 0, nacl.sign.signatureLength );
+
 	const app			= new Connection( app_port );
 	await app.open();
 
 	try {
-	    let resp			= await app.request("zome_call_invocation", zome_call_request );
+	    let resp			= await app.request("call_zome", zome_call_request );
 	    let essence			= decode( resp );
 	    let result			= new HoloHash( essence.payload );
 	    log.normal("Save bytes response: %s", result );

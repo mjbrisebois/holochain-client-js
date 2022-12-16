@@ -5,9 +5,11 @@
 	<script type="text/javascript" src="/dist/holochain-client.prod.js"></script>
 
 	<script type="text/javascript">
-	  let { logging } = HolochainClient;
+	  (async () => {
+	      let { logging } = await HolochainClient;
 
-	  logging();
+	      logging();
+	  })();
 	</script>
     </body>
 </html>

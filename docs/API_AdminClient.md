@@ -80,21 +80,30 @@ await admin.generateAgent();
 ```
 
 
-### `<AdminClient>.registerDna( path, options ) -> Promise<DnaHash>`
+### `<AdminClient>.registerDna( path, modifiers ) -> Promise<DnaHash>`
 Register a DNA package.
 
 - `path` - (*required*) file path or `DnaHash` for a DNA package
-- `options` - optional input
-  - `options.properties` - object containing cell properties
+- `modifiers` - modifier options 
+  - `modifiers.network_seed` - a string to set a unique seed for a custom network space
     - defaults to `null`
-  - `options.uid` - override UID in the DNA bundle manifest
+  - `modifiers.properties` - an object containing cell properties
+    - defaults to `null`
+  - `modifiers.origin_time` - a timestamp to set the origin time for this DNA
+    - defaults to `null`
+  - `modifiers.quantum_time` - a pair of integers to set the quantum time for this DNA
     - defaults to `null`
 
 Returns a Promise that resolves with the `DnaHash`
 
 Example
 ```javascript
-await admin.registerDna("./mere_memory.dna");
+await admin.registerDna("./mere_memory.dna", {
+    "network_seed": "something else",
+    "properties": { "foo": "bar" },
+    "origin_time": Date.now(),
+    "quantum_time": [ 1, 2 ],
+});
 // DnaHash(39) [
 //   132,  45,  36,  25,   6, 246, 151, 222,  37,
 //   222, 187, 136, 196, 181, 162, 197,  76, 167,
@@ -105,56 +114,18 @@ await admin.registerDna("./mere_memory.dna");
 ```
 
 
-### `<AdminClient>.installApp( app_id, agent_hash, dnas ) -> Promise<object>`
+### `<AdminClient>.installApp( app_id, agent_hash, path, options ) -> Promise<object>`
 Create a new App installation for the given Agent using the given DNAs.
 
-- `app_id` - (*optional*) specify a unique ID for this installed App
-  - defaults to `null`
-- `agent_hash` - (*required*) a 39 byte `Uint8Array` that is an `AgentPubKey`
-- `dnas` - (*required*) an object of key/values that correspond to
-  - `key` - a DNA role name for this DNA
-  - `value` - a 39 byte `Uint8Array` that is a registered `DnaHash`
-
-Returns a Promise that resolves with the installation details
-
-Example
-```javascript
-const agent_hash = new HoloHash("uhCAkXZ1bRsAdulmQ5Tjw5rNJPXXudEVxMvhqEMPZtCyyoeyY68rH");
-const dna_hash = new HoloHash("uhC0kGQb2l94l3ruIxLWixUynZAbkRdelCwvgNGK9m1XB6bo24-A-");
-
-await admin.installApp( "my-app", agent_hash, {
-    "memory": dna_hash,
-});
-// {
-//     "installed_app_id": "my-app-bundle",
-//     "status": {
-//         "disabled": {
-//             "reason": {
-//                 "never_started": null
-//             }
-//         }
-//     },
-//     "roles": {
-//         "memory": {
-//             "cell_id": [ dna_hash, agent_hash ],
-//         }
-//     }
-// }
-```
-
-
-### `<AdminClient>.installAppBundle( app_id, agent_hash, path, options ) -> Promise<object>`
-Create a new App installation for the given Agent using the given DNAs.
-
-- `app_id` - (*optional*) specify a unique ID for this installed App
-  - defaults to `null`
+- `app_id` - (*required*) specify a unique ID for this installed App
+  - `*` will generate a random hex ID
 - `agent_hash` - (*required*) a 39 byte `Uint8Array` that is an `AgentPubKey`
 - `path` - (*required*) file path for a app package
 - `options` - optional input
   - `options.membrane_proof` - an object of key/values that correspond to
       - `key` - a DNA role name matching one in the app manifest
       - `value` - proof, if required by the DNA
-  - `options.uid` - override UID in the DNA bundle manifest
+  - `options.network_seed` - a string to set a unique seed for a custom network space
     - defaults to `null`
 
 Returns a Promise that resolves with the installation details
@@ -486,6 +457,97 @@ await admin.requestAgentInfo();
 //         }
 //     }
 // ]
+```
+
+### `<AdminClient>.grantCapability( tag, agent, dna, functions, secret, assignees ) -> Promise<true>`
+Create one of the capability grants based on the number of arguments provided.
+
+Required arguments
+- `tag`
+- `agent`
+- `dna`
+- `functions`
+
+Optional argument logic
+- If a `secret` and `assignees` are provided, `grantAssignedCapability` is called.
+- If a `secret` is provided, `grantTransferableCapability` is called.
+- Otherwise, `grantUnrestrictedCapability` is called.
+
+
+### `<AdminClient>.grantUnrestrictedCapability( tag, agent, dna, functions ) -> Promise<true>`
+Create an unrestricted capability grant.
+
+- `tag` - (*required*) a string (is not required to be unique)
+- `agent` - (*required*) a 39 byte `Uint8Array` used as the `AgentPubKey` of the cell ID
+- `dna` - (*required*) a 39 byte `Uint8Array` used as the `DnaHash` of the cell ID
+- `functions` - (*required*) a list of zome and functions name pairs
+  - eg. paired as an array `[ "zome_name", "function_name" ]`
+
+Returns a Promise that resolves with `true`
+
+Example
+```javascript
+const agent_hash = new HoloHash("uhCAkXZ1bRsAdulmQ5Tjw5rNJPXXudEVxMvhqEMPZtCyyoeyY68rH");
+const dna_hash = new HoloHash("uhC0kGQb2l94l3ruIxLWixUynZAbkRdelCwvgNGK9m1XB6bo24-A-");
+
+await admin.grantCapability( "tag-name", agent_hash, dna_hash, [
+    [ "zome_name", "fn_name" ],
+]);
+// true
+```
+
+
+### `<AdminClient>.grantTransferableCapability( tag, agent, dna, functions, secret ) -> Promise<true>`
+Create a transferable capability grant.
+
+- `tag` - (*required*) a string (is not required to be unique)
+- `agent` - (*required*) a 39 byte `Uint8Array` used as the `AgentPubKey` of the cell ID
+- `dna` - (*required*) a 39 byte `Uint8Array` used as the `DnaHash` of the cell ID
+- `functions` - (*required*) a list of zome and functions name pairs
+  - eg. paired as an array `[ "zome_name", "function_name" ]`
+- `secret` - (*required*) a string
+
+Returns a Promise that resolves with `true`
+
+Example
+```javascript
+const agent_hash = new HoloHash("uhCAkXZ1bRsAdulmQ5Tjw5rNJPXXudEVxMvhqEMPZtCyyoeyY68rH");
+const dna_hash = new HoloHash("uhC0kGQb2l94l3ruIxLWixUynZAbkRdelCwvgNGK9m1XB6bo24-A-");
+
+await admin.grantCapability( "tag-name", agent_hash, dna_hash, [
+    [ "zome_name", "fn_name" ],
+], "super_secret_password" );
+// true
+```
+
+
+### `<AdminClient>.grantAssignedCapability( tag, agent, dna, functions, secret, assignees ) -> Promise<true>`
+Create an assigned capability grant.
+
+- `tag` - (*required*) a string (is not required to be unique)
+- `agent` - (*required*) a 39 byte `Uint8Array` used as the `AgentPubKey` of the cell ID
+- `dna` - (*required*) a 39 byte `Uint8Array` used as the `DnaHash` of the cell ID
+- `functions` - (*required*) a list of zome and functions name pairs
+  - eg. paired as an array `[ "zome_name", "function_name" ]`
+- `secret` - (*required*) a string
+- `assignees` - (*required*) a list of agents (39 byte `Uint8Array`)
+
+Returns a Promise that resolves with `true`
+
+Example
+```javascript
+const nacl = require('tweetnacl');
+const key_pair = nacl.sign.keyPair();
+
+const agent_hash = new HoloHash("uhCAkXZ1bRsAdulmQ5Tjw5rNJPXXudEVxMvhqEMPZtCyyoeyY68rH");
+const dna_hash = new HoloHash("uhC0kGQb2l94l3ruIxLWixUynZAbkRdelCwvgNGK9m1XB6bo24-A-");
+
+await admin.grantCapability( "tag-name", agent_hash, dna_hash, [
+    [ "zome_name", "fn_name" ],
+], "super_secret_password", [
+    new AgentPubKey( key_pair.publicKey )
+] );
+// true
 ```
 
 

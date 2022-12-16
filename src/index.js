@@ -1,4 +1,5 @@
 
+const nacl				= require('tweetnacl');
 const { TimeoutError }			= require('@whi/promise-timeout');
 const HoloHashTypes			= require('@whi/holo-hash');
 const { HoloHash, AgentPubKey }		= HoloHashTypes;
@@ -14,20 +15,32 @@ const { AdminClient,
 
 
 const DEFAULT_AGENT_CLIENT_OPTIONS	= {
+    "capability_agent": null,
+    "signing_handler": zome_call_request => zome_call_request,
 };
 
 class AgentClient {
 
-    static async createFromAppInfo ( app_id, connection, timeout, options = {} ) {
+    static async appInfo ( app_id, connection, timeout ) {
 	const conn			= new Connection( connection );
 
 	log.debug && log("Opening connection '%s' for AgentClient", conn.name );
 	await conn.open();
 
+	try {
+	    return await conn.request("get_app_info", {
+		"installed_app_id": app_id,
+	    }, timeout );
+	} finally {
+	    // Only close the connection if it was created in this block
+	    if ( connection !== conn )
+		await conn.close( timeout );
+	}
+    }
+
+    static async createFromAppInfo ( app_id, connection, timeout, options = {} ) {
 	const app_schema		= {};
-	const app_info			= await conn.request("app_info", {
-	    "installed_app_id": app_id,
-	}, timeout );
+	const app_info			= await AgentClient.appInfo( app_id, connection )
 
 	let agent;
 
@@ -44,30 +57,76 @@ class AgentClient {
 	options.app_info		= app_info;
 
 	log.debug && log("Creating AgentClient from app info for '%s' (%s): %s ", app_id, agent, Object.keys(app_schema).join(", ") );
-	return new AgentClient( agent, app_schema, conn, options );
+	return new AgentClient( agent, app_schema, connection, options );
     }
 
-    constructor ( agent, app_schema, connection, options ) {
-	this._agent			= new AgentPubKey( agent );
+    constructor ( agent, app_schema, connection, options = {} ) {
+	const opts			= Object.assign({}, DEFAULT_AGENT_CLIENT_OPTIONS, options );
+
+	if ( opts.capability_agent === null ) {
+	    const key_pair			= nacl.sign.keyPair();
+
+	    this.setCapabilityAgent(
+		new AgentPubKey( key_pair.publicKey ),
+		async ( zome_call_request ) => {
+		    const { hashZomeCall }	= await import('@whi/holochain-zome-call-hashing');
+		    const zome_call_hash	= await hashZomeCall( zome_call_request );
+
+		    zome_call_request.signature	= nacl.sign( zome_call_hash, key_pair.secretKey )
+			.subarray( 0, nacl.sign.signatureLength );
+
+		    return zome_call_request;
+		}
+	    );
+	}
+	else if ( typeof options.signing_handler !== "function" )
+	    log.debug && log("WARN: agent (%s) was supplied for AgentClient without a signing handler", opts.capability_agent );
+
+	this.cellAgent( agent );
+
 	this._app_schema		= app_schema instanceof AppSchema
 	    ? app_schema
 	    : new AppSchema( app_schema );
 
-	if ( connection instanceof Connection )
-	    this._conn			= connection;
-	else
-	    this._conn			= new Connection( connection );
+	this._conn			= new Connection( connection );
+	this._options			= opts;
 
-	this._options			= Object.assign( {}, DEFAULT_AGENT_CLIENT_OPTIONS, options );
-
-	this.app_info			= this._options.app_info || null;
 	this.pre_processors		= [];
 	this.post_processors		= [];
-	this.signing_handler		= zome_call => zome_call;
     }
 
-    signingHandler ( handler ) {
-	this.signing_handler		= handler;
+    async appInfo ( app_id ) {
+	return await AgentClient.appInfo( app_id, this._conn, this._options.timeout );
+    }
+
+    cellAgent ( agent ) {
+	if ( agent !== undefined )
+	    this._cell_agent		= new AgentPubKey( agent );
+
+	if ( !(this._cell_agent instanceof Uint8Array) )
+	    throw new TypeError(`Invalid Cell Agent '${typeof this._cell_agent}'; should be an Uint8Array`);
+
+	return this._cell_agent;
+    }
+
+    capabilityAgent ( agent ) {
+	if ( agent !== undefined )
+	    this._capability_agent	= new AgentPubKey( agent );
+
+	if ( !(this._capability_agent instanceof Uint8Array) )
+	    throw new TypeError(`Invalid Capability Agent '${typeof this._capability_agent}'; should be an Uint8Array`);
+
+	return this._capability_agent;
+    }
+
+    setSigningHandler ( signing_handler ) {
+	this.capabilityAgent( this._cell_agent );
+	this.signing_handler		= signing_handler;
+    }
+
+    setCapabilityAgent ( agent_hash, signing_handler ) {
+	this.capabilityAgent( agent_hash );
+	this.signing_handler		= signing_handler;
     }
 
     addProcessor ( event, callback ) {
@@ -121,7 +180,8 @@ class AgentClient {
 
 	let result			= await zome_api.call(
 	    this._conn,
-	    this._agent,
+	    this.capabilityAgent(),
+	    this.cellAgent(),
 	    dna_schema.hash(),
 	    func,
 	    payload,

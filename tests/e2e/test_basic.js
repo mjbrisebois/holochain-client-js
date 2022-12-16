@@ -21,13 +21,13 @@ if ( process.env.LOG_LEVEL )
     hc_client.logging();
 
 
-const TEST_DNA_PATH			= path.join( __dirname, "../packs/memory.dna" );
+const TEST_HAPP_PATH			= path.join( __dirname, "../packs/storage.happ" );
 const TEST_APP_ID			= "test-app";
 const HTTP_PORT				= 2222;
 
 let conductor;
 let dna_hash;
-let agent_hash;
+let cell_agent_hash;
 let app_port;
 
 let browser;
@@ -59,7 +59,7 @@ function agent_client_tests () {
 	let result			= await page.evaluate(async function ( agent_hash, dna_hash, app_port ) {
 	    let { AgentClient,
 		  HoloHash,
-		  logging }		= HolochainClient;
+		  logging }		= await HolochainClient;
 
 	    logging();
 
@@ -81,7 +81,7 @@ function agent_client_tests () {
 	    } finally {
 		await app.close();
 	    }
-	}, agent_hash, dna_hash, app_port );
+	}, cell_agent_hash, dna_hash, app_port );
 
 	log.normal("Save bytes response: %s", result );
 	expect( result			).to.be.a("string");
@@ -114,12 +114,15 @@ describe("E2E: Holochain Client", () => {
 
 	const port			= conductor.adminPorts()[0];
 	const admin			= new AdminClient( port );
-	agent_hash			= await admin.generateAgent();;
-	dna_hash			= await admin.registerDna( TEST_DNA_PATH );
-	let installation		= await admin.installApp( TEST_APP_ID, agent_hash, {
-	    "memory": dna_hash,
-	});
+	cell_agent_hash			= await admin.generateAgent();;
+	let installation		= await admin.installApp( TEST_APP_ID, cell_agent_hash, TEST_HAPP_PATH );
 	await admin.enableApp( TEST_APP_ID );
+
+	dna_hash			= installation.roles.storage.cell_id[0];
+
+	await admin.grantUnrestrictedCapability( "allow-all-for-testing", cell_agent_hash, dna_hash, [
+	    [ "mere_memory", "save_bytes" ],
+	]);
 
 	let app_iface			= await admin.attachAppInterface();
 	app_port			= app_iface.port;

@@ -29,6 +29,9 @@ let connection_id			= 0;
 
 class Connection {
     constructor ( address, options = {} ) {
+	if ( address instanceof Connection )
+	    return address;
+
 	this.options			= Object.assign( {}, DEFAULT_CONNECTION_OPTIONS, options );
 
 	const uri_scheme		= this.options.secure === true ? "wss://" : "ws://";
@@ -177,7 +180,7 @@ class Connection {
 		stack,
 	    };
 
-	    this.send( "Request", payload, id );
+	    this.send( "request", payload, id );
 	}, timeout, `get response for request '${method}'` );
     }
 
@@ -192,7 +195,7 @@ class Connection {
 
 	    log.debug && this._log("Message type '%s': { %s }", msg.type, Object.keys(msg).join(", ") );
 
-	    if ( msg.type === "Response" )
+	    if ( msg.type === "response" )
 		await this._handle_response( msg );
 	    else if ( msg.type === "Signal" )
 		await this._handle_signal( msg );
