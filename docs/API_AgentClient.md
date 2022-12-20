@@ -14,7 +14,34 @@ Create a client using the data fetched via an app info request.
 
 Example
 ```javascript
-const app_info = await AgentClient.appInfo( "my-app-bundle", 45678 );
+const app_info = await AgentClient.appInfo( "my-app", 45678 );
+
+// Example response
+// {
+//     "installed_app_id": "my-app",
+//     "status": {
+//         "running": null
+//     },
+//     "roles": {
+//         "memory": {
+//             "name": "memory",
+//             "cell_id": [ dna_hash, agent_hash ],
+//             "dna_modifiers": {
+//                 "network_seed": "",
+//                 "properties": null,
+//                 "origin_time": 1658361600000000,
+//                 "quantum_time": {
+//                     "secs": 300,
+//                     "nanos": 0
+//                 }
+//             },
+//             "provisioned": true,
+//             "enabled": false
+//             "cloned": [],
+//         }
+//     }
+// }
+
 ```
 
 ## `AgentClient.createFromAppInfo( app_id, connection, timeout, opts ) -> Promise<AgentClient>`
@@ -29,7 +56,7 @@ Create a client using the data fetched via an app info request.
 
 Example
 ```javascript
-const client = await AgentClient.createFromAppInfo( "my-app-bundle", 45678 );
+const client = await AgentClient.createFromAppInfo( "my-app", 45678 );
 ```
 
 

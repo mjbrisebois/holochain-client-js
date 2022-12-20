@@ -134,7 +134,7 @@ Example
 ```javascript
 const agent_hash = new HoloHash("uhCAkXZ1bRsAdulmQ5Tjw5rNJPXXudEVxMvhqEMPZtCyyoeyY68rH");
 
-await admin.installAppBundle( "my-app-bundle", agent_hash, "./memory.happ" );
+await admin.installApp( "my-app", agent_hash, "./memory.happ" );
 // {
 //     "installed_app_id": "my-app",
 //     "status": {
@@ -146,7 +146,20 @@ await admin.installAppBundle( "my-app-bundle", agent_hash, "./memory.happ" );
 //     },
 //     "roles": {
 //         "memory": {
+//             "name": "memory",
 //             "cell_id": [ dna_hash, agent_hash ],
+//             "dna_modifiers": {
+//                 "network_seed": "",
+//                 "properties": null,
+//                 "origin_time": 1658361600000000,
+//                 "quantum_time": {
+//                     "secs": 300,
+//                     "nanos": 0
+//                 }
+//             },
+//             "provisioned": true,
+//             "enabled": false
+//             "cloned": [],
 //         }
 //     }
 // }
@@ -184,10 +197,20 @@ await admin.enableApp( "my-app" );
 //         },
 //         "roles": {
 //             "memory": {
-//                 "cell_id": [
-//                     DnaHash(39) [ 132,  45,  36, ... ],
-//                     AgentPubKey(39) [ 132,  32,  36, ... ]
-//                 ]
+//                 "name": "memory",
+//                 "cell_id": [ dna_hash, agent_hash ],
+//                 "dna_modifiers": {
+//                     "network_seed": "",
+//                     "properties": null,
+//                     "origin_time": 1658361600000000,
+//                     "quantum_time": {
+//                         "secs": 300,
+//                         "nanos": 0
+//                     }
+//                 },
+//                 "provisioned": true,
+//                 "enabled": false
+//                 "cloned": [],
 //             }
 //         }
 //     },
@@ -311,7 +334,20 @@ await admin.listApps();
 //         },
 //         "roles": {
 //             "memory": {
+//                 "name": "memory",
 //                 "cell_id": [ dna_hash, agent_hash ],
+//                 "dna_modifiers": {
+//                     "network_seed": "",
+//                     "properties": null,
+//                     "origin_time": 1658361600000000,
+//                     "quantum_time": {
+//                         "secs": 300,
+//                         "nanos": 0
+//                     }
+//                 },
+//                 "provisioned": true,
+//                 "enabled": false
+//                 "cloned": [],
 //             }
 //         }
 //     }

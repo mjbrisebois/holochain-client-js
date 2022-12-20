@@ -70,8 +70,9 @@ function basic_tests () {
 
 	const app_info			= await app.appInfo( TEST_APP_ID );
 
-	expect( app_info.installed_app_id	).to.equal( TEST_APP_ID );
-	expect( app_info.cell_data		).to.have.length( 1 );
+	expect( app_info.installed_app_id		).to.equal( TEST_APP_ID );
+	expect( app_info.roles.storage.provisioned	).to.be.true;
+	expect( app_info.roles.storage.cloned		).to.have.length( 0 );
 
 	try {
 	    let essence			= await app.call(

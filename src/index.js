@@ -11,6 +11,7 @@ const { AppSchema, DnaSchema }		= require('./schemas.js');
 const { Connection }			= require('./connection.js');
 const { ZomeApi }			= require('./zome_api.js');
 const { AdminClient,
+	reformat_app_info,
 	reformat_cell_id }		= require('./admin_client.js');
 
 
@@ -28,9 +29,11 @@ class AgentClient {
 	await conn.open();
 
 	try {
-	    return await conn.request("get_app_info", {
+	    const app_info		= await conn.request("app_info", {
 		"installed_app_id": app_id,
 	    }, timeout );
+
+	    return reformat_app_info( app_info );
 	} finally {
 	    // Only close the connection if it was created in this block
 	    if ( connection !== conn )
@@ -44,17 +47,12 @@ class AgentClient {
 
 	let agent;
 
-	for ( let cell of app_info.cell_data ) {
-	    cell.cell_id[0]		= new HoloHashTypes.DnaHash(	 cell.cell_id[0] );
-	    cell.cell_id[1]		= new HoloHashTypes.AgentPubKey( cell.cell_id[1] );
-
+	for ( let [role_name, info] of Object.entries( app_info.roles ) ) {
 	    if ( agent === undefined )
-		agent			= cell.cell_id[1];
+		agent			= info.cell_id[1];
 
-	    app_schema[cell.role_name]	= cell.cell_id[0];
+	    app_schema[ role_name ]	= info.cell_id[0];
 	}
-
-	options.app_info		= app_info;
 
 	log.debug && log("Creating AgentClient from app info for '%s' (%s): %s ", app_id, agent, Object.keys(app_schema).join(", ") );
 	return new AgentClient( agent, app_schema, connection, options );

@@ -57,17 +57,17 @@ function connection_tests () {
 	});
 	log.normal("Installed app '%s'", installation.installed_app_id );
 
-	dna_hash			= installation.cell_data[0].cell_id[0];
-
-	for ( let role_name in installation.roles ) {
-	    let role			= installation.roles[role_name];
-	    log.silly("  - %s [ %s::%s ] (provisioned: %s) - %s clones (limit: %s) ", () => [
+	for ( let role_name in installation.cell_info ) {
+	    let cells			= installation.cell_info[ role_name ];
+	    log.silly("  - %s [ %s::%s ] (provisioned: %s) - %s clones", () => [
 		role_name,
-		new HoloHash( role.base_cell_id[0] ),
-		new HoloHash( role.base_cell_id[1] ),
-		role.is_provisioned, role.clones.length, role.clone_limit
+		new HoloHash( cells[0].Provisioned.cell_id[0] ),
+		new HoloHash( cells[0].Provisioned.cell_id[1] ),
+		!!cells[0].Provisioned, cells.length - 1
 	    ]);
 	}
+
+	dna_hash			= installation.cell_info.storage[0].Provisioned.cell_id[0];
 
 	await conn.request("enable_app", {
 	    "installed_app_id": TEST_APP_ID,

@@ -65,13 +65,16 @@ function basic_tests () {
 	let installation		= await admin.installApp( `${TEST_APP_ID}`, agent_hash, TEST_HAPP_PATH, {
 	    "network_seed": "some_network_seed",
 	});
-	log.normal("Installed app '%s' [state: %s]", installation.installed_app_id, installation.status );
+	log.normal("Installed app '%s' [status: %s]", installation.installed_app_id, installation.status );
 
 	Object.entries( installation.roles ).forEach( ([role_name, role]) => {
-	    log.silly("  %s => %s", () => [
-		role_name.padEnd(15), role.cell_id,
+	    log.silly("  %s => %s (provisioned: %s, enabled: %s)", () => [
+		role_name.padEnd(15), role.cell_id, role.provisioned, role.enabled,
 	    ]);
 	});
+
+	expect( installation.roles.storage.provisioned	).to.be.true;
+	expect( installation.roles.storage.enabled	).to.be.false;
 
 	dna_hash			= installation.roles.storage.cell_id[0];
 

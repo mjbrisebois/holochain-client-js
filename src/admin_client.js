@@ -24,13 +24,45 @@ function deprecation_notice ( msg ) {
 function reformat_app_info ( app_info ) {
     log.debug && log("Reformatting app info: %s", app_info.installed_app_id );
 
+    // app_info.cell_info		- Map of role name to cell list
+    // app_info.cell_info[ role name ]	- 1 Provisioned cell, followed by cloned or stem cells
+
     app_info.roles			= {};
-    for ( let role of Object.values( app_info.cell_data ) ) {
-	app_info.roles[role.role_name] = {
-	    "cell_id": reformat_cell_id( role.cell_id ),
+    for ( let [role_name, cells] of Object.entries( app_info.cell_info ) ) {
+	// The first cell info is the original provisioned one.  The rest are clones.
+	const role			= app_info.roles[ role_name ] = {
+	    "cloned": [],
 	};
+
+	const base_cell			= cells.shift();
+
+	if ( base_cell.Provisioned ) {
+	    role.provisioned		= true;
+	    Object.assign( role, base_cell.Provisioned );
+	    role.cell_id		= reformat_cell_id( role.cell_id );
+	}
+	else if ( base_cell.Stem ) {
+	    role.provisioned		= false;
+	    Object.assign( role, base_cell.Stem );
+	}
+
+	delete role.clone_id;
+
+	// `dna_modifiers` is always there whether it's provisioned or stem
+	role.dna_modifiers.properties	= decode( role.dna_modifiers.properties );
+
+	for ( let cell of cells ) {
+	    if ( cell.Cloned ) {
+		cell			= cell.Cloned;
+		cell.cell_id		= reformat_cell_id( cell.cell_id );
+		role.cloned.push( cell );
+	    }
+	    else
+		throw new TypeError(`Unknown cell info format: ${Object.keys(cell)}`);
+	}
     }
-    delete app_info.cell_data;
+
+    delete app_info.cell_info;
 
     return app_info;
 }
@@ -435,7 +467,7 @@ class AdminClient {
     }
 
     async requestAgentInfo ( cell_id = null ) {
-	const infos			= await this._request("request_agent_info", {
+	const infos			= await this._request("agent_info", {
 	    "cell_id": cell_id,
 	});
 
@@ -532,6 +564,7 @@ set_tostringtag( AdminClient, "AdminClient" );
 
 
 module.exports = {
+    reformat_app_info,
     reformat_cell_id,
     reformat_cell_errors,
     AdminClient,
