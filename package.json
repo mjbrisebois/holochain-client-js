@@ -16,8 +16,13 @@
     "src/errors.js",
     "dist/holochain-client.js",
     "dist/holochain-client.js.map",
+    "dist/*.holochain-client.js",
+    "dist/*.holochain-client.js.map",
+    "dist/*.module.wasm",
     "dist/holochain-client.prod.js",
-    "dist/holochain-client.prod.js.map"
+    "dist/holochain-client.prod.js.map",
+    "dist/*.holochain-client.prod.js",
+    "dist/*.holochain-client.prod.js.map"
   ],
   "scripts": {
     "build": "webpack",
