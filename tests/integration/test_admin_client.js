@@ -229,27 +229,37 @@ function basic_tests () {
 
     it("should grant assigned capability", async function () {
 	const key_pair			= nacl.sign.keyPair();
-	const succeeded			= await admin.grantCapability( "tag-name", agent_hash, dna_hash, [
-	    [ "zome_name", "fn_name" ],
-	], "super_secret_password", [
+	const succeeded			= await admin.grantCapability( "tag-name", agent_hash, dna_hash, "*", "super_secret_password", [
 	    new AgentPubKey( key_pair.publicKey )
-	] );
+	]);
 
 	expect( succeeded		).to.be.true;
     });
 
     it("should grant transferable capability", async function () {
-	const succeeded			= await admin.grantCapability( "tag-name", agent_hash, dna_hash, [
-	    [ "zome_name", "fn_name" ],
-	], "super_secret_password" );
+	const succeeded			= await admin.grantCapability( "tag-name", agent_hash, dna_hash, "*", "super_secret_password" );
 
 	expect( succeeded		).to.be.true;
     });
 
     it("should grant unrestricted capability", async function () {
+	const succeeded			= await admin.grantCapability( "tag-name", agent_hash, dna_hash, "*" );
+
+	expect( succeeded		).to.be.true;
+    });
+
+    it("should grant unrestricted capability for specific functions array", async function () {
 	const succeeded			= await admin.grantCapability( "tag-name", agent_hash, dna_hash, [
 	    [ "mere_memory", "save_bytes" ],
 	]);
+
+	expect( succeeded		).to.be.true;
+    });
+
+    it("should grant unrestricted capability for specific functions object", async function () {
+	const succeeded			= await admin.grantCapability( "tag-name", agent_hash, dna_hash, {
+	    "mere_memory": [ "save_bytes" ],
+	});
 
 	expect( succeeded		).to.be.true;
     });
@@ -336,6 +346,20 @@ function errors_tests () {
 	await expect_reject( async () => {
 	    await admin.enableApp( "invalid-app-id" );
 	}, ConductorError, "AppNotInstalled" );
+    });
+
+    it("should fail to create cap grant because bad input", async function () {
+	await expect_reject( async () => {
+	    await admin.grantCapability( "?", agent_hash, dna_hash );
+	}, TypeError, "Invalid granted functions input" );
+
+	await expect_reject( async () => {
+	    await admin.grantCapability( "?", agent_hash, dna_hash, { "zome": {}, });
+	}, TypeError, "Invalid granted functions object; functions must" );
+
+	await expect_reject( async () => {
+	    await admin.grantCapability( "?", agent_hash, dna_hash, { "zome": [ null ], });
+	}, TypeError, "Invalid granted functions object; function name" );
     });
 }
 

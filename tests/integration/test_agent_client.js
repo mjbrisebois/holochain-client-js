@@ -298,10 +298,12 @@ describe("Integration: Agent Client", () => {
 	let app_info			= await admin.installApp( TEST_APP_CLONES_ID, cell_agent_hash, TEST_HAPP_CLONES_PATH );
 	log.normal("Installed app '%s' [state: %s]", app_info.installed_app_id, app_info.status );
 
-	await admin.grantUnrestrictedCapability( "allow-all-for-testing", cell_agent_hash, dna_hash, [
-	    [ "mere_memory", "save_bytes" ],
-	    [ "mere_memory", "nonexistent" ],
-	]);
+	await admin.grantUnrestrictedCapability( "allow-all-for-testing", cell_agent_hash, dna_hash, {
+	    "mere_memory": [
+		"save_bytes",
+		"nonexistent",
+	    ],
+	});
 
 	let app_iface			= await admin.attachAppInterface();
 	app_port			= app_iface.port;

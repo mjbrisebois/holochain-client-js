@@ -21,6 +21,45 @@ function deprecation_notice ( msg ) {
     console.error( err );
 }
 
+function normalize_granted_functions ( granted_functions ) {
+    // Supports
+    //
+    //   - *
+    //   - array<(zome, fn)>
+    //   - object<zome, array<fn>>
+    //
+    if ( granted_functions === undefined )
+	throw new TypeError(`Invalid granted functions input; expected *, array<(zome, fn)>, or object<zome, array<fn>>`);
+
+    if ( granted_functions === "*" )
+	granted_functions		= null;
+
+    const functions_type		= granted_functions === null ? "All" : "Listed";
+    const functions_input		= {
+	[functions_type]: granted_functions,
+    };
+
+    if ( granted_functions === null || Array.isArray( granted_functions ) )
+	return functions_input;
+
+    const functions		= [];
+    for ( let zome_name in granted_functions ) {
+	if ( !Array.isArray( granted_functions[ zome_name ] ) )
+	    throw new TypeError(`Invalid granted functions object; functions must be an array, not type '${typeof fn_name}'`);
+
+	for ( let fn_name of granted_functions[ zome_name ] ) {
+	    if ( typeof fn_name !== "string" )
+		throw new TypeError(`Invalid granted functions object; function name must be a string, not type '${typeof fn_name}'`);
+
+	    functions.push( [ zome_name, fn_name ] );
+	}
+    }
+    functions_input[ functions_type ]	= functions;
+
+    return functions_input;
+}
+
+
 function reformat_app_info ( app_info ) {
     log.debug && log("Reformatting app info: %s", app_info.installed_app_id );
 
@@ -495,16 +534,18 @@ class AdminClient {
     }
 
     async grantUnrestrictedCapability ( tag, agent, dna, functions ) {
-	await this._request("grant_zome_call_capability", {
+	const input			= {
 	    "cell_id": [ dna, agent ],
 	    "cap_grant": {
 		"tag": tag,
-		"functions": functions,
+		"functions": normalize_granted_functions( functions ),
 		"access": {
 		    "Unrestricted": null,
 		},
 	    },
-	});
+	};
+
+	await this._request("grant_zome_call_capability", input );
 
 	return true;
     }
@@ -514,18 +555,20 @@ class AdminClient {
 	if ( typeof secret === "string" )
 	    secret			= hash_secret( secret );
 
-	await this._request("grant_zome_call_capability", {
+	const input			= {
 	    "cell_id": [ dna, agent ],
 	    "cap_grant": {
 		"tag": tag,
-		"functions": functions,
+		"functions": normalize_granted_functions( functions ),
 		"access": {
 		    "Transferable": {
 			"secret": secret,
 		    },
 		},
 	    },
-	});
+	};
+
+	await this._request("grant_zome_call_capability", input );
 
 	return true;
     }
@@ -535,11 +578,11 @@ class AdminClient {
 	if ( typeof secret === "string" )
 	    secret			= hash_secret( secret );
 
-	await this._request("grant_zome_call_capability", {
+	const input			= {
 	    "cell_id": [ dna, agent ],
 	    "cap_grant": {
 		"tag": tag,
-		"functions": functions,
+		"functions": normalize_granted_functions( functions ),
 		"access": {
 		    "Transferable": {
 			"secret": secret,
@@ -547,7 +590,9 @@ class AdminClient {
 		    },
 		},
 	    },
-	});
+	};
+
+	await this._request("grant_zome_call_capability", input );
 
 	return true;
     }

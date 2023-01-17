@@ -516,8 +516,10 @@ Create an unrestricted capability grant.
 - `tag` - (*required*) a string (is not required to be unique)
 - `agent` - (*required*) a 39 byte `Uint8Array` used as the `AgentPubKey` of the cell ID
 - `dna` - (*required*) a 39 byte `Uint8Array` used as the `DnaHash` of the cell ID
-- `functions` - (*required*) a list of zome and functions name pairs
-  - eg. paired as an array `[ "zome_name", "function_name" ]`
+- `functions` - (*required*) specified zome(s) and function(s) or the wildcard for all
+  - eg. wildcard `*`
+  - eg. paired as an array `[ [ "zome_name", "function_name" ], ... ]`
+  - eg. object lists `{ "zome_name": [ "function_name" ] }`
 
 Returns a Promise that resolves with `true`
 
@@ -539,8 +541,10 @@ Create a transferable capability grant.
 - `tag` - (*required*) a string (is not required to be unique)
 - `agent` - (*required*) a 39 byte `Uint8Array` used as the `AgentPubKey` of the cell ID
 - `dna` - (*required*) a 39 byte `Uint8Array` used as the `DnaHash` of the cell ID
-- `functions` - (*required*) a list of zome and functions name pairs
-  - eg. paired as an array `[ "zome_name", "function_name" ]`
+- `functions` - (*required*) specified zome(s) and function(s) or the wildcard for all
+  - eg. wildcard `*`
+  - eg. paired as an array `[ [ "zome_name", "function_name" ], ... ]`
+  - eg. object lists `{ "zome_name": [ "function_name" ] }`
 - `secret` - (*required*) a string
 
 Returns a Promise that resolves with `true`
@@ -563,8 +567,10 @@ Create an assigned capability grant.
 - `tag` - (*required*) a string (is not required to be unique)
 - `agent` - (*required*) a 39 byte `Uint8Array` used as the `AgentPubKey` of the cell ID
 - `dna` - (*required*) a 39 byte `Uint8Array` used as the `DnaHash` of the cell ID
-- `functions` - (*required*) a list of zome and functions name pairs
-  - eg. paired as an array `[ "zome_name", "function_name" ]`
+- `functions` - (*required*) specified zome(s) and function(s) or the wildcard for all
+  - eg. wildcard `*`
+  - eg. paired as an array `[ [ "zome_name", "function_name" ], ... ]`
+  - eg. object lists `{ "zome_name": [ "function_name" ] }`
 - `secret` - (*required*) a string
 - `assignees` - (*required*) a list of agents (39 byte `Uint8Array`)
 

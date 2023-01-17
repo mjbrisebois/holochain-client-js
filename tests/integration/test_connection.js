@@ -80,9 +80,9 @@ function connection_tests () {
 	    "cell_id": [ dna_hash, agent_hash ],
 	    "cap_grant": {
 		"tag": "unrestricted-zome-calling",
-		"functions": [
-		    [ "mere_memory", "save_bytes" ],
-		],
+		"functions": {
+		    "All": null,
+		},
 		"access": {
 		    "Unrestricted": null,
 		},
