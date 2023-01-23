@@ -61,13 +61,13 @@ function connection_tests () {
 	    let cells			= installation.cell_info[ role_name ];
 	    log.silly("  - %s [ %s::%s ] (provisioned: %s) - %s clones", () => [
 		role_name,
-		new HoloHash( cells[0].Provisioned.cell_id[0] ),
-		new HoloHash( cells[0].Provisioned.cell_id[1] ),
-		!!cells[0].Provisioned, cells.length - 1
+		new HoloHash( cells[0].provisioned.cell_id[0] ),
+		new HoloHash( cells[0].provisioned.cell_id[1] ),
+		!!cells[0].provisioned, cells.length - 1
 	    ]);
 	}
 
-	dna_hash			= installation.cell_info.storage[0].Provisioned.cell_id[0];
+	dna_hash			= installation.cell_info.storage[0].provisioned.cell_id[0];
 
 	await conn.request("enable_app", {
 	    "installed_app_id": TEST_APP_ID,
@@ -91,6 +91,8 @@ function connection_tests () {
     });
 
     it("should call zome function via app interface", async function () {
+	this.timeout( 5_000 );
+
 	const key_pair			= nacl.sign.keyPair();
 	const zome_call_request		= {
 	    "cap":		null,

@@ -67,6 +67,7 @@ function reformat_app_info ( app_info ) {
     // app_info.cell_info[ role name ]	- 1 Provisioned cell, followed by cloned or stem cells
 
     app_info.roles			= {};
+
     for ( let [role_name, cells] of Object.entries( app_info.cell_info ) ) {
 	// The first cell info is the original provisioned one.  The rest are clones.
 	const role			= app_info.roles[ role_name ] = {
@@ -75,14 +76,14 @@ function reformat_app_info ( app_info ) {
 
 	const base_cell			= cells.shift();
 
-	if ( base_cell.Provisioned ) {
+	if ( base_cell.provisioned ) {
 	    role.provisioned		= true;
-	    Object.assign( role, base_cell.Provisioned );
+	    Object.assign( role, base_cell.provisioned );
 	    role.cell_id		= reformat_cell_id( role.cell_id );
 	}
-	else if ( base_cell.Stem ) {
+	else if ( base_cell.stem ) {
 	    role.provisioned		= false;
-	    Object.assign( role, base_cell.Stem );
+	    Object.assign( role, base_cell.stem );
 	}
 
 	delete role.clone_id;
@@ -91,8 +92,8 @@ function reformat_app_info ( app_info ) {
 	role.dna_modifiers.properties	= decode( role.dna_modifiers.properties );
 
 	for ( let cell of cells ) {
-	    if ( cell.Cloned ) {
-		cell			= cell.Cloned;
+	    if ( cell.cloned ) {
+		cell			= cell.cloned;
 		cell.cell_id		= reformat_cell_id( cell.cell_id );
 		role.cloned.push( cell );
 	    }
@@ -102,6 +103,8 @@ function reformat_app_info ( app_info ) {
     }
 
     delete app_info.cell_info;
+
+    app_info.running			= !!app_info.status.running;
 
     return app_info;
 }
@@ -293,12 +296,6 @@ class AdminClient {
 
     async disableApp ( app_id ) { // -> undefined (expected)
 	return await this._request("disable_app", {
-	    "installed_app_id": app_id,
-	});
-    }
-
-    async startApp ( app_id ) { // -> bool
-	return await this._request("start_app", {
 	    "installed_app_id": app_id,
 	});
     }

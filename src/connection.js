@@ -197,7 +197,7 @@ class Connection {
 
 	    if ( msg.type === "response" )
 		await this._handle_response( msg );
-	    else if ( msg.type === "Signal" )
+	    else if ( msg.type === "signal" )
 		await this._handle_signal( msg );
 	    else
 		console.error("Unknown message type:", msg.type, msg );

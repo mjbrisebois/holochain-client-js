@@ -63,7 +63,7 @@ function basic_tests () {
 
     it("should install app", async function () {
 	let installation		= await admin.installApp( `${TEST_APP_ID}`, agent_hash, TEST_HAPP_PATH, {
-	    "network_seed": "some_network_seed",
+	    "network_seed": Math.random().toString(),
 	});
 	log.normal("Installed app '%s' [status: %s]", installation.installed_app_id, installation.status );
 
@@ -74,7 +74,7 @@ function basic_tests () {
 	});
 
 	expect( installation.roles.storage.provisioned	).to.be.true;
-	expect( installation.roles.storage.enabled	).to.be.false;
+	expect( installation.running			).to.be.false;
 
 	dna_hash			= installation.roles.storage.cell_id[0];
 
@@ -86,7 +86,9 @@ function basic_tests () {
     });
 
     it("should install app with clones", async function () {
-	let app_info			= await admin.installApp( TEST_APP_CLONES_ID, agent_hash, TEST_HAPP_CLONES_PATH );
+	let app_info			= await admin.installApp( TEST_APP_CLONES_ID, agent_hash, TEST_HAPP_CLONES_PATH, {
+	    "network_seed": Math.random().toString(),
+	});
 	log.normal("Installed app '%s' [state: %s]", app_info.installed_app_id, app_info.status );
 
 	expect( app_info.installed_app_id	).to.equal( TEST_APP_CLONES_ID );
@@ -98,15 +100,10 @@ function basic_tests () {
 	log.normal("Enabled app: %s", resp );
     });
 
-    it("should start app", async function () {
-	const resp			= await admin.startApp( TEST_APP_ID );
-	log.normal("Started app: %s", resp );
-    });
-
     it("should list DNAs", async function () {
 	const dnas			= await admin.listDnas();
 
-	expect( dnas			).to.have.length( 2 );
+	expect( dnas			).to.have.length( 3 );
 	expect( dnas.map(String)	).to.include( dna_hash.toString() );
     });
 
@@ -150,7 +147,7 @@ function basic_tests () {
 
 	const dnas			= await admin.listDnas();
 
-	expect( dnas			).to.have.length( 6 );
+	expect( dnas			).to.have.length( 7 );
     });
 
     it("should list cells", async function () {
@@ -265,6 +262,8 @@ function basic_tests () {
     });
 
     it("should call zome function", async function () {
+	this.timeout( 5_000 );
+
 	const app			= new AgentClient( agent_hash, {
 	    "memory": dna_hash,
 	}, app_port );

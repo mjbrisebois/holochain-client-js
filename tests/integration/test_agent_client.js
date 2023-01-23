@@ -46,6 +46,8 @@ let app_port;
 
 function basic_tests () {
     it("should create AgentClient with existing connection", async function () {
+	this.timeout( 5_000 );
+
 	const conn			= new Connection( app_port );
 	const app			= new AgentClient( cell_agent_hash, {
 	    "memory": dna_hash,
@@ -290,12 +292,16 @@ describe("Integration: Agent Client", () => {
 	const admin			= new AdminClient( port );
 	cell_agent_hash			= await admin.generateAgent();;
 
-	let installation		= await admin.installApp( TEST_APP_ID, cell_agent_hash, TEST_HAPP_PATH );
+	let installation		= await admin.installApp( TEST_APP_ID, cell_agent_hash, TEST_HAPP_PATH, {
+	    "network_seed": Math.random().toString(),
+	});
 	await admin.enableApp( TEST_APP_ID );
 
 	dna_hash			= installation.roles.storage.cell_id[0];
 
-	let app_info			= await admin.installApp( TEST_APP_CLONES_ID, cell_agent_hash, TEST_HAPP_CLONES_PATH );
+	let app_info			= await admin.installApp( TEST_APP_CLONES_ID, cell_agent_hash, TEST_HAPP_CLONES_PATH, {
+	    "network_seed": Math.random().toString(),
+	});
 	log.normal("Installed app '%s' [state: %s]", app_info.installed_app_id, app_info.status );
 
 	await admin.grantUnrestrictedCapability( "allow-all-for-testing", cell_agent_hash, dna_hash, {
