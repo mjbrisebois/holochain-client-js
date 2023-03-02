@@ -15,7 +15,7 @@ A class for communicating with Holochain Conductor's WebSocket.
 - `options.timeout` - timeout in milliseconds used as the default for requests via this connection
   - defaults to `15000`
 - `options.host` - used as the host in the connection address when only a number is given
-  - defaults to `localhost`
+  - defaults to `127.0.0.1`
 - `options.secure` - when `true` the URI scheme will be `wss://`
   - defaults to `false`
 

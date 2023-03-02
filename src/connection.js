@@ -21,7 +21,7 @@ const uri_scheme_regexp			= /^[A-Za-z0-9.\-+]+\:\/\//;
 
 const DEFAULT_CONNECTION_OPTIONS	= {
     "timeout": 15_000,
-    "host": "localhost",
+    "host": "127.0.0.1",
     "secure": false,
 };
 
@@ -87,7 +87,7 @@ class Connection {
 
 	    this._socket.onerror	= ( event ) => {
 		if ( this._opened === false ) {
-		    open_error.message	= `Failed to open WebSocket: ${event.target.url}`;
+		    open_error.message	= `Failed to open WebSocket(${event.target.url}): ${event.message}`;
 		    this._open_r( open_error );
 		}
 		else {
