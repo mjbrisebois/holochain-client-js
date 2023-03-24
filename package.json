@@ -36,9 +36,9 @@
     "url": "https://github.com/mjbrisebois/js-holochain-client/"
   },
   "dependencies": {
+    "@holochain/serialization": "0.1.0-beta-rc.3",
     "@msgpack/msgpack": "^2.7.0",
     "@whi/holo-hash": "^0.3.0",
-    "@whi/holochain-zome-call-hashing": "^0.1.0",
     "@whi/promise-timeout": "^0.1.1",
     "js-sha512": "^0.8.0",
     "tweetnacl": "^1.0.3"
@@ -51,7 +51,7 @@
     "chai": "^4.3.4",
     "mocha": "^10.1.0",
     "puppeteer": "^14.3.0",
-    "webpack": "^5.39.1",
+    "webpack": "^5.76.3",
     "webpack-cli": "^4.7.2",
     "why-is-node-running": "^2.2.0",
     "ws": "^8.0.0"

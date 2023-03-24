@@ -11,7 +11,6 @@ const nacl				= require('tweetnacl');
 const { encode, decode }		= require('@msgpack/msgpack');
 const { HoloHash, AgentPubKey }		= require('@whi/holo-hash');
 const { Holochain }			= require('@whi/holochain-backdrop');
-const { hashZomeCall }			= require('@whi/holochain-zome-call-hashing');
 
 const { expect_reject }			= require('./utils.js');
 const { Connection,
@@ -104,6 +103,7 @@ function connection_tests () {
 	    "nonce":		nacl.randomBytes( 32 ),
 	    "expires_at":	(Date.now() + (5 * 60 * 1_000)) * 1_000,
 	};
+	const { hashZomeCall }		= await import('@holochain/serialization');
 	const zome_call_hash		= await hashZomeCall( zome_call_request );
 
 	zome_call_request.signature	= nacl.sign( zome_call_hash, key_pair.secretKey )

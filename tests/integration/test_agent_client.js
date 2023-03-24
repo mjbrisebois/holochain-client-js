@@ -8,7 +8,6 @@ global.WebSocket			= require('ws');
 const why				= require('why-is-node-running');
 const expect				= require('chai').expect;
 const nacl				= require('tweetnacl');
-const { hashZomeCall }			= require('@whi/holochain-zome-call-hashing');
 const { encode, decode }		= require('@msgpack/msgpack');
 const { Holochain }			= require('@whi/holochain-backdrop');
 const { HoloHash, AgentPubKey }		= require('@whi/holo-hash');
@@ -132,6 +131,7 @@ function basic_tests () {
 	}, app_port, {
 	    "agent": new AgentPubKey( key_pair.publicKey ),
 	    "signingHandler": async ( zome_call_request ) => {
+		const { hashZomeCall }	= await import('@holochain/serialization');
 		const zome_call_hash	= await hashZomeCall( zome_call_request );
 
 		zome_call_request.signature	= nacl.sign( zome_call_hash, key_pair.secretKey )
@@ -162,6 +162,7 @@ function basic_tests () {
 	app.setCapabilityAgent(
 	    new AgentPubKey( key_pair.publicKey ),
 	    async ( zome_call_request ) => {
+		const { hashZomeCall }	= await import('@holochain/serialization');
 		const zome_call_hash	= await hashZomeCall( zome_call_request );
 
 		zome_call_request.signature	= nacl.sign( zome_call_hash, key_pair.secretKey )

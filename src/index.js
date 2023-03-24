@@ -33,6 +33,9 @@ class AgentClient {
 		"installed_app_id": app_id,
 	    }, timeout );
 
+	    if ( app_info === null )
+		throw new Error(`App ID '${APP_ID}' is not running`);
+
 	    return reformat_app_info( app_info );
 	} finally {
 	    // Only close the connection if it was created in this block
@@ -67,7 +70,7 @@ class AgentClient {
 	    this.setCapabilityAgent(
 		new AgentPubKey( key_pair.publicKey ),
 		async ( zome_call_request ) => {
-		    const { hashZomeCall }	= await import('@whi/holochain-zome-call-hashing');
+		    const { hashZomeCall }	= await import('@holochain/serialization');
 		    const zome_call_hash	= await hashZomeCall( zome_call_request );
 
 		    zome_call_request.signature	= nacl.sign( zome_call_hash, key_pair.secretKey )
