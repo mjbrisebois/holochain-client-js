@@ -1,6 +1,5 @@
 
 const { randomBytes }			= require('tweetnacl');
-const { encode, decode }		= require('@msgpack/msgpack');
 
 const { log,
 	set_tostringtag }		= require('./utils.js');
@@ -21,12 +20,14 @@ class ZomeApi {
 	    throw new Error(`Unknown Zome function: ${func}; expected one of ${ this._methods }`);
 	}
 
-	const zomeCall		= {
+	const { MsgPack }		= await import('@whi/holochain-websocket');
+
+	const zomeCall			= {
 	    "provenance":	client_agent,
 	    "cell_id":		[ dna, cell_agent ],
 	    "zome_name":	this._name,
 	    "fn_name":		func,
-	    "payload":		encode( payload ),
+	    "payload":		MsgPack.encode( payload ),
 	    "nonce":		randomBytes( 32 ),
 	    "expires_at":	(Date.now() + (5 * 60 * 1000)) * 1000,
 	};
@@ -37,7 +38,7 @@ class ZomeApi {
 
 	const resp			= await connection.request("call_zome", signedZomeCall, timeout || this._timeout );
 
-	return decode( resp );
+	return MsgPack.decode( resp );
     }
 }
 set_tostringtag( ZomeApi, "ZomeApi" );

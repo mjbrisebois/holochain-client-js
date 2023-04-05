@@ -12,7 +12,6 @@ This package is designed to work with Holochain's Conductor API interfaces.
   - `new AppSchema( ... )` - defines a set of `DnaSchema` instances
     - `new DnaSchema( ... )` - defines a set of `ZomeApi` instances
       - `new ZomeApi( ... )` - manages calling zome functions
-- `new Connection( ... )` - manages transport context.
 
 
 ## Development

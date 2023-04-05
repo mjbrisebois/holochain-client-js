@@ -12,8 +12,7 @@ const http				= require('@whi/http');
 const { Holochain }			= require('@whi/holochain-backdrop');
 const { HoloHash }			= require('@whi/holo-hash');
 
-const { Connection,
-	AdminClient,
+const { AdminClient,
 	AgentClient,
 	...hc_client }			= require('../../src/index.js');
 
@@ -55,7 +54,7 @@ async function create_page ( url ) {
 
 
 function agent_client_tests () {
-    it("should create AgentClient with existing connection", async function () {
+    it("should make request using AgentClient", async function () {
 	let result			= await page.evaluate(async function ( agent_hash, dna_hash, app_port ) {
 	    let { AgentClient,
 		  HoloHash,

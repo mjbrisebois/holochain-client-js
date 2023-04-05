@@ -13,7 +13,7 @@ module.exports = {
 	asyncWebAssembly: true,
     },
     resolve: {
-	mainFields: ["module", "main"],
+	mainFields: ["browser", "module", "main"],
     },
     output: {
 	filename:	FILENAME,

@@ -3,18 +3,14 @@ const log				= require('@whi/stdlog')(path.basename( __filename ), {
     level: process.env.LOG_LEVEL || 'fatal',
 });
 
-global.WebSocket			= require('ws');
-
 const why				= require('why-is-node-running');
 const expect				= require('chai').expect;
 const nacl				= require('tweetnacl');
-const { encode, decode }		= require('@msgpack/msgpack');
 const { Holochain }			= require('@whi/holochain-backdrop');
 const { HoloHash, AgentPubKey }		= require('@whi/holo-hash');
 
 const { expect_reject }			= require('./utils.js');
-const { Connection,
-	AdminClient,
+const { AdminClient,
 	AgentClient,
 
 	ConductorError,
@@ -47,6 +43,7 @@ function basic_tests () {
     it("should create AgentClient with existing connection", async function () {
 	this.timeout( 5_000 );
 
+	const { Connection }		= await import('@whi/holochain-websocket');
 	const conn			= new Connection( app_port );
 	const app			= new AgentClient( cell_agent_hash, {
 	    "memory": dna_hash,

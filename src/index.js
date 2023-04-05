@@ -6,9 +6,7 @@ const { HoloHash, AgentPubKey }		= HoloHashTypes;
 
 const { log,
 	set_tostringtag }		= require('./utils.js');
-const { ...ErrorTypes }			= require('./errors.js');
 const { AppSchema, DnaSchema }		= require('./schemas.js');
-const { Connection }			= require('./connection.js');
 const { ZomeApi }			= require('./zome_api.js');
 const { AdminClient,
 	reformat_app_info,
@@ -23,6 +21,7 @@ const DEFAULT_AGENT_CLIENT_OPTIONS	= {
 class AgentClient {
 
     static async appInfo ( app_id, connection, timeout ) {
+	const { Connection }		= await import('@whi/holochain-websocket');
 	const conn			= new Connection( connection );
 
 	log.debug && log("Opening connection '%s' for AgentClient", conn.name );
@@ -36,7 +35,7 @@ class AgentClient {
 	    if ( app_info === null )
 		throw new Error(`App ID '${APP_ID}' is not running`);
 
-	    return reformat_app_info( app_info );
+	    return await reformat_app_info( app_info );
 	} finally {
 	    // Only close the connection if it was created in this block
 	    if ( connection !== conn )
@@ -89,15 +88,26 @@ class AgentClient {
 	    ? app_schema
 	    : new AppSchema( app_schema );
 
-	this._conn			= new Connection( connection );
+	this._conn_load			= new Promise(async (f,r) => {
+	    const { Connection }	= await import('@whi/holochain-websocket');
+
+	    this._conn			= new Connection( connection );
+	    f();
+	});
 	this._options			= opts;
 
 	this.pre_processors		= [];
 	this.post_processors		= [];
     }
 
+    async connection () {
+	await this._conn_load;
+	return this._conn;
+    }
+
     async appInfo ( app_id ) {
-	return await AgentClient.appInfo( app_id, this._conn, this._options.timeout );
+	const conn			= await this.connection();
+	return await AgentClient.appInfo( app_id, conn, this._options.timeout );
     }
 
     cellAgent ( agent ) {
@@ -156,9 +166,11 @@ class AgentClient {
     }
 
     async call ( dna_role_name, zome, func, payload, timeout ) {
-	if ( this._conn._opened === false ) {
-	    log.debug && log("Opening connection '%s' for AgentClient", this._conn.name );
-	    await this._conn.open();
+	const conn			= await this.connection();
+
+	if ( conn._opened === false ) {
+	    log.debug && log("Opening connection '%s' for AgentClient", conn.name );
+	    await conn.open();
 	}
 
 	const req_ctx			= {
@@ -180,7 +192,7 @@ class AgentClient {
 	payload				= await this._run_processors( "input", payload, req_ctx );
 
 	let result			= await zome_api.call(
-	    this._conn,
+	    conn,
 	    this.capabilityAgent(),
 	    this.cellAgent(),
 	    dna_schema.hash(),
@@ -198,12 +210,13 @@ class AgentClient {
     }
 
     async _request ( ...args ) {
-	if ( this._conn._opened === false ) {
-	    log.debug && log("Opening connection '%s' for AdminClient", this._conn.name );
-	    await this._conn.open();
+	const conn			= await this.connection();
+	if ( conn._opened === false ) {
+	    log.debug && log("Opening connection '%s' for AdminClient", conn.name );
+	    await conn.open();
 	}
 
-	return await this._conn.request( ...args );
+	return await conn.request( ...args );
     }
 
     // Even if no properties change, the Conductor will generate a network seed so that it does not
@@ -227,7 +240,8 @@ class AgentClient {
     }
 
     async close ( timeout ) {
-	return await this._conn.close( timeout );
+	const conn			= await this.connection();
+	return await conn.close( timeout );
     }
 }
 set_tostringtag( AgentClient, "AgentClient" );
@@ -235,8 +249,6 @@ set_tostringtag( AgentClient, "AgentClient" );
 
 
 module.exports = {
-    Connection,
-
     AppSchema,
     DnaSchema,
 
@@ -245,7 +257,7 @@ module.exports = {
 
     ZomeApi,
 
-    ...ErrorTypes,
+    // ...ErrorTypes,
     TimeoutError,
 
     HoloHash,

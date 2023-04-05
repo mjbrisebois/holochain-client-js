@@ -9,6 +9,20 @@ node_modules:		package-lock.json
 	touch $@
 build:			node_modules
 
+use-local-backdrop:
+	cd tests; npm uninstall @whi/holochain-backdrop
+	cd tests; npm install --save ../../node-holochain-backdrop/
+use-npm-backdrop:
+	cd tests; npm uninstall @whi/holochain-backdrop
+	cd tests; npm install --save @whi/holochain-backdrop
+
+use-local-websocket:
+	cd tests; npm uninstall @whi/holochain-websocket
+	cd tests; npm install --save ../../holochain-websocket-js/
+use-npm-websocket:
+	cd tests; npm uninstall @whi/holochain-websocket
+	cd tests; npm install --save @whi/holochain-websocket
+
 
 MOCHA_OPTS		= -t 15000
 #

@@ -1,6 +1,5 @@
 
 const sha512				= require('js-sha512');
-const { decode }			= require('@msgpack/msgpack');
 const { HoloHash,
 	ActionHash,
 	EntryHash,
@@ -10,7 +9,7 @@ const { HoloHash,
 const { log,
 	set_tostringtag }		= require('./utils.js');
 const { DeprecationNotice }		= require('./errors.js');
-const { Connection }			= require('./connection.js');
+
 
 function hash_secret ( secret ) {
     return new Uint8Array( sha512.digest( secret ) );
@@ -60,8 +59,10 @@ function normalize_granted_functions ( granted_functions ) {
 }
 
 
-function reformat_app_info ( app_info ) {
+async function reformat_app_info ( app_info ) {
     log.debug && log("Reformatting app info: %s", app_info.installed_app_id );
+
+    const { MsgPack }			= await import('@whi/holochain-websocket');
 
     // app_info.cell_info		- Map of role name to cell list
     // app_info.cell_info[ role name ]	- 1 Provisioned cell, followed by cloned or stem cells
@@ -89,7 +90,7 @@ function reformat_app_info ( app_info ) {
 	delete role.clone_id;
 
 	// `dna_modifiers` is always there whether it's provisioned or stem
-	role.dna_modifiers.properties	= decode( role.dna_modifiers.properties );
+	role.dna_modifiers.properties	= MsgPack.decode( role.dna_modifiers.properties );
 
 	for ( let cell of cells ) {
 	    if ( cell.cloned ) {
@@ -170,18 +171,29 @@ class AdminClient {
     static APPS_PAUSED			= "Paused";
 
     constructor ( connection, opts = {} ) {
-	this._conn			= connection instanceof Connection
-	    ? port
-	    : new Connection( connection, { "name": "admin", ...opts });
+	this._conn_load			= new Promise(async (f,r) => {
+	    const { Connection }	= await import('@whi/holochain-websocket');
+
+	    this._conn			= connection instanceof Connection
+		? port
+		: new Connection( connection, { "name": "admin", ...opts });
+	    f();
+	});
+    }
+
+    async connection () {
+	await this._conn_load;
+	return this._conn;
     }
 
     async _request ( ...args ) {
-	if ( this._conn._opened === false ) {
-	    log.debug && log("Opening connection '%s' for AdminClient", this._conn.name );
-	    await this._conn.open();
+	const conn			= await this.connection();
+	if ( conn._opened === false ) {
+	    log.debug && log("Opening connection '%s' for AdminClient", conn.name );
+	    await conn.open();
 	}
 
-	return await this._conn.request( ...args );
+	return await conn.request( ...args );
     }
 
     async attachAppInterface ( port ) {
@@ -265,7 +277,7 @@ class AdminClient {
 
 	const installation		= await this._request("install_app", input );
 
-	return reformat_app_info( installation );
+	return await reformat_app_info( installation );
     }
 
     async uninstallApp ( app_id ) { // -> undefined (expected)
@@ -288,7 +300,7 @@ class AdminClient {
 	    "installed_app_id": app_id,
 	});
 
-	resp.app			= reformat_app_info( resp.app );
+	resp.app			= await reformat_app_info( resp.app );
 	resp.errors			= reformat_cell_errors( resp.errors );
 
 	return resp;
@@ -338,7 +350,9 @@ class AdminClient {
 	});
 
 	log.debug && log("Apps (%s): %s", apps.length, apps.map( x => x.installed_app_id ).join(", ") );
-	return apps.map( reformat_app_info );
+	return await Promise.all(
+	    apps.map( async info => await reformat_app_info( info ) )
+	);
     }
 
     async listAppInterfaces () {
@@ -361,6 +375,8 @@ class AdminClient {
     }
 
     async cellState ( dna_hash, agent_hash, start, end ) {
+	const { MsgPack }		= await import('@whi/holochain-websocket');
+
 	const state_json		= await this._request("dump_state", {
 	    "cell_id": [
 		new DnaHash( dna_hash ),
@@ -429,7 +445,7 @@ class AdminClient {
 		record.action.entry_hash	= new EntryHash(   new Uint8Array(record.action.entry_hash) );
 		try {
 		    const length		= record.entry.entry.length;
-		    record.entry.entry		= decode( record.entry.entry );
+		    record.entry.entry		= MsgPack.decode( record.entry.entry );
 		    record.entry.length	= length;
 		} catch (err) {
 		    record.entry.entry		= new Uint8Array( record.entry.entry );
@@ -503,6 +519,8 @@ class AdminClient {
     }
 
     async requestAgentInfo ( cell_id = null ) {
+	const { MsgPack }		= await import('@whi/holochain-websocket');
+
 	const infos			= await this._request("agent_info", {
 	    "cell_id": cell_id,
 	});
@@ -510,11 +528,11 @@ class AdminClient {
 	infos.forEach( (info, i) => {
 	    info.agent			= new AgentPubKey( info.agent );
 	    info.signature		= new Uint8Array( info.signature );
-	    info.agent_info		= decode( info.agent_info );
+	    info.agent_info		= MsgPack.decode( info.agent_info );
 
 	    info.agent_info.agent	= new Uint8Array( info.agent_info.agent );
 	    info.agent_info.space	= new Uint8Array( info.agent_info.space );
-	    info.agent_info.meta_info	= decode( info.agent_info.meta_info );
+	    info.agent_info.meta_info	= MsgPack.decode( info.agent_info.meta_info );
 	});
 
 	log.debug && log("Infos (%s): %s", infos.length, infos );
@@ -595,7 +613,8 @@ class AdminClient {
     }
 
     async close ( timeout ) {
-	return await this._conn.close( timeout );
+	const conn			= await this.connection();
+	return await conn.close( timeout );
     }
 
     toString () {

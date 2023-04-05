@@ -9,8 +9,6 @@
     "src/index.js",
     "src/admin_client.js",
     "src/utils.js",
-    "src/constants.js",
-    "src/connection.js",
     "src/schemas.js",
     "src/zome_api.js",
     "src/errors.js",
@@ -37,8 +35,8 @@
   },
   "dependencies": {
     "@holochain/serialization": "0.1.0-beta-rc.3",
-    "@msgpack/msgpack": "^2.7.0",
     "@whi/holo-hash": "^0.3.0",
+    "@whi/holochain-websocket": "^0.1.1",
     "@whi/promise-timeout": "^0.1.1",
     "js-sha512": "^0.8.0",
     "tweetnacl": "^1.0.3"

@@ -3,12 +3,9 @@ const log				= require('@whi/stdlog')(path.basename( __filename ), {
     level: process.env.LOG_LEVEL || 'fatal',
 });
 
-global.WebSocket			= require('ws');
-
 const why				= require('why-is-node-running');
 const expect				= require('chai').expect;
 const nacl				= require('tweetnacl');
-const { encode, decode }		= require('@msgpack/msgpack');
 const { Holochain }			= require('@whi/holochain-backdrop');
 const { HoloHash, AgentPubKey }		= require('@whi/holo-hash');
 const json				= require('@whi/json');
