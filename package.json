@@ -2,56 +2,35 @@
   "name": "@whi/holochain-client",
   "version": "0.81.0",
   "description": "A Javascript client for communicating with Holochain Conductor APIs",
+  "type": "module",
   "main": "src/index.js",
   "browser": "dist/holochain-client.prod.js",
   "files": [
     "README.md",
     "src/index.js",
-    "src/admin_client.js",
-    "src/utils.js",
-    "src/schemas.js",
-    "src/zome_api.js",
-    "src/errors.js",
-    "dist/holochain-client.js",
-    "dist/holochain-client.js.map",
-    "dist/*.holochain-client.js",
-    "dist/*.holochain-client.js.map",
-    "dist/*.module.wasm",
-    "dist/holochain-client.prod.js",
-    "dist/holochain-client.prod.js.map",
-    "dist/*.holochain-client.prod.js",
-    "dist/*.holochain-client.prod.js.map"
+    "dist/**"
   ],
   "scripts": {
-    "build": "webpack",
-    "webpack": "webpack --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Matthew Brisebois <matthew@webheroes.ca>",
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mjbrisebois/js-holochain-client/"
+    "url": "https://github.com/mjbrisebois/holochain-client-js/"
   },
   "dependencies": {
-    "@holochain/serialization": "0.1.0-beta-rc.3",
-    "@whi/holo-hash": "^0.3.0",
-    "@whi/holochain-websocket": "^0.1.1",
-    "@whi/promise-timeout": "^0.1.1",
-    "js-sha512": "^0.8.0",
-    "tweetnacl": "^1.0.3"
+    "@whi/holochain-admin-client": "^0.1.2",
+    "@whi/holochain-agent-client": "^0.1.2"
   },
   "devDependencies": {
-    "@whi/holochain-backdrop": "^0.67.0",
+    "@whi/holochain-backdrop": "^2.0.1",
     "@whi/http": "^0.2.3",
-    "@whi/json": "^0.1.3",
-    "@whi/stdlog": "^0.3.4",
     "chai": "^4.3.4",
     "mocha": "^10.1.0",
     "puppeteer": "^14.3.0",
     "webpack": "^5.76.3",
     "webpack-cli": "^4.7.2",
-    "why-is-node-running": "^2.2.0",
-    "ws": "^8.0.0"
+    "why-is-node-running": "^2.2.0"
   }
 }

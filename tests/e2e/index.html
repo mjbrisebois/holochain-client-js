@@ -2,14 +2,16 @@
     <head>
     </head>
     <body>
-	<script type="text/javascript" src="/dist/holochain-client.js"></script>
+	<script type="module">
+	    import HolochainClient from '../../dist/holochain-client.js';
+	    import { AdminClient, AgentClient, HoloHash, logging } from '../../dist/holochain-client.js';
 
-	<script type="text/javascript">
-	  (async () => {
-	      let { logging } = await HolochainClient;
+	    logging();
 
-	      logging();
-	  })();
+	    window.HolochainClient	= HolochainClient;
+	    window.HoloHash		= HoloHash;
+	    window.AgentClient		= AgentClient;
+	    window.AdminClient		= AdminClient;
 	</script>
     </body>
 </html>

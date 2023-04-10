@@ -3,15 +3,10 @@
 # Contributing
 
 ## Overview
-This package is designed to work with Holochain's Conductor API interfaces.
+This package simply couples the agent/admin clients into a single import.
 
-### Class Context Hierarchy
-
-- `new AdminClient( ... )` - manages administrative requests
-- `new AgentClient( ... )` - manages Zome interactions for a specific Agent
-  - `new AppSchema( ... )` - defines a set of `DnaSchema` instances
-    - `new DnaSchema( ... )` - defines a set of `ZomeApi` instances
-      - `new ZomeApi( ... )` - manages calling zome functions
+- [`@whi/holochain-agent-client`](https://www.npmjs.com/package/@whi/holochain-agent-client)
+- [`@whi/holochain-admin-client`](https://www.npmjs.com/package/@whi/holochain-admin-client)
 
 
 ## Development
@@ -22,29 +17,23 @@ See [docs/API.md](docs/API.md) for detailed API References
 Turns on debugging logs.
 
 ```javascript
-const { logging } = require('@whi/holochain-client');
+import { logging } from '@whi/holochain-client';
 
 logging(); // show debug logs
 ```
 
 ### Environment
 
-- Developed using Node.js `v14.17.3`
-- Enter `nix-shell` for other development environment dependencies.
+- Developed using Node.js `v18.14.2`
+- Enter `nix develop` for development environment dependencies.
 
 ### Building
 No build is required for Node.
 
 Bundling with Webpack is supported for web
 ```
-npm run build
+npx webpack
 ```
-
-#### Optimizations
-
-- Using `@msgpack/msgpack` instead of `msgpack-lite` because "lite" only reduced the compressed size
-  by 3kb (57kb -> 54kb).  It also caused tests to fail and has less support than the official
-  library.
 
 ### Testing
 

@@ -1,25 +1,24 @@
-const path				= require('path');
-const log				= require('@whi/stdlog')(path.basename( __filename ), {
-    level: process.env.LOG_LEVEL || 'fatal',
-});
+import { Logger }			from '@whi/weblogger';
+const log				= new Logger("test-basic", process.env.LOG_LEVEL );
 
-global.WebSocket			= require('ws');
+import why				from 'why-is-node-running';
+import path				from 'path';
+import { Holochain }			from '@whi/holochain-backdrop';
+import { expect_reject }		from './utils.js';
 
-const why				= require('why-is-node-running');
-const expect				= require('chai').expect;
-const { Holochain }			= require('@whi/holochain-backdrop');
-const { HoloHash }			= require('@whi/holo-hash');
+import {
+    AdminClient,
+    AgentClient,
 
-const { expect_reject }			= require('./utils.js');
-const { AdminClient,
-	AgentClient,
-	...hc_client }			= require('../../src/index.js');
+    HoloHash,
+    logging,
+}					from '../../src/index.js';
 
-if ( process.env.LOG_LEVEL )
-    hc_client.logging();
+if ( process.env.LOG_LEVEL === "trace" )
+    logging();
 
 
-const TEST_HAPP_PATH			= path.join( __dirname, "../packs/storage.happ" );
+const TEST_HAPP_PATH			= new URL( "../packs/storage.happ", import.meta.url ).pathname;
 const TEST_APP_ID			= "test-app";
 
 let conductor;
@@ -55,16 +54,8 @@ describe("Integration: Holochain Client", () => {
     before(async function () {
 	this.timeout( 5_000 );
 
-	conductor			= new Holochain();
-
-	conductor.on("conductor:stdout", line => {
-	    log.silly("Conductor STDOUT => %s", line );
-	});
-	conductor.on("conductor:stderr", line => {
-	    if ( line.includes("func_translator") )
-		return;
-
-	    log.silly("Conductor STDERR => %s", line );
+	conductor			= new Holochain({
+	    "default_loggers": process.env.LOG_LEVEL === "trace",
 	});
 
 	await conductor.start();
