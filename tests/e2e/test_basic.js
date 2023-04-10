@@ -1,27 +1,29 @@
-const path				= require('path');
-const log				= require('@whi/stdlog')(path.basename( __filename ), {
-    level: process.env.LOG_LEVEL || 'fatal',
-});
+import { Logger }			from '@whi/weblogger';
+const log				= new Logger("test-basic", process.env.LOG_LEVEL );
 
-global.WebSocket			= require('ws');
+import why				from 'why-is-node-running';
 
-const why				= require('why-is-node-running');
-const expect				= require('chai').expect;
-const puppeteer				= require('puppeteer');
-const http				= require('@whi/http');
-const { Holochain }			= require('@whi/holochain-backdrop');
-const { HoloHash }			= require('@whi/holo-hash');
+import path				from 'path';
+import { expect }			from 'chai';
 
-const { Connection,
-	AdminClient,
-	AgentClient,
-	...hc_client }			= require('../../src/index.js');
+import puppeteer			from 'puppeteer';
+import http				from '@whi/http';
 
-if ( process.env.LOG_LEVEL )
-    hc_client.logging();
+import { Holochain }			from '@whi/holochain-backdrop';
+
+import {
+    AdminClient,
+    AgentClient,
+    HoloHash,
+    logging,
+}					from '../../src/index.js';
+
+if ( process.env.LOG_LEVEL === "trace" )
+    logging();
 
 
-const TEST_HAPP_PATH			= path.join( __dirname, "../packs/storage.happ" );
+const TEST_HAPP_PATH			= new URL( "../packs/storage.happ", import.meta.url ).pathname;
+console.log( TEST_HAPP_PATH );
 const TEST_APP_ID			= "test-app";
 const HTTP_PORT				= 2222;
 
@@ -41,9 +43,9 @@ async function create_page ( url ) {
     page.on("console", async ( msg ) => {
 	let args			= await Promise.all( msg.args().map( async (jshandle) => await jshandle.jsonValue() ) );
 	if ( args.length === 0 )
-	    log.error("\033[90mPuppeteer console.log( \033[31m%s \033[90m)\033[0m", msg.text() );
+	    log.error("\x1b[90mPuppeteer console.log( \x1b[31m%s \x1b[90m)\x1b[0m", msg.text() );
 	else {
-	    log.silly("\033[90mPuppeteer console.log( \033[37m"+ args.shift() +" \033[90m)\033[0m", ...args );
+	    log.trace("\x1b[90mPuppeteer console.log( \x1b[37m"+ args.shift() +" \x1b[90m)\x1b[0m", ...args );
 	}
     });
 
@@ -55,14 +57,8 @@ async function create_page ( url ) {
 
 
 function agent_client_tests () {
-    it("should create AgentClient with existing connection", async function () {
+    it("should make request using AgentClient", async function () {
 	let result			= await page.evaluate(async function ( agent_hash, dna_hash, app_port ) {
-	    let { AgentClient,
-		  HoloHash,
-		  logging }		= await HolochainClient;
-
-	    logging();
-
 	    const app			= new AgentClient( agent_hash, {
 		"memory": dna_hash,
 	    }, app_port );
@@ -98,16 +94,8 @@ describe("E2E: Holochain Client", () => {
     before(async function () {
 	this.timeout( 10_000 );
 
-	conductor			= new Holochain();
-
-	conductor.on("conductor:stdout", line => {
-	    log.silly("Conductor STDOUT => %s", line );
-	});
-	conductor.on("conductor:stderr", line => {
-	    if ( line.includes("func_translator") )
-		return;
-
-	    log.silly("Conductor STDERR => %s", line );
+	conductor			= new Holochain({
+	    "default_loggers": process.env.LOG_LEVEL === "trace",
 	});
 
 	await conductor.start();
@@ -131,8 +119,8 @@ describe("E2E: Holochain Client", () => {
 
 	browser				= await puppeteer.launch();
 	server				= new http.server();
-	server.serve_local_assets( path.resolve( __dirname, "../../" ) );
-	server.listen( HTTP_PORT )
+	server.serve_local_assets( new URL( "../..", import.meta.url ).pathname );
+	server.listen( HTTP_PORT );
 
 	const test_url			= `http://localhost:${HTTP_PORT}/tests/e2e/index.html`;
 	page				= await create_page( test_url );

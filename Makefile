@@ -9,6 +9,27 @@ node_modules:		package-lock.json
 	touch $@
 build:			node_modules
 
+use-local-admin-client:
+	cd tests; npm uninstall @whi/holochain-admin-client
+	cd tests; npm install --save ../../holochain-admin-client-js/
+use-npm-admin-client:
+	cd tests; npm uninstall @whi/holochain-admin-client
+	cd tests; npm install --save @whi/holochain-admin-client
+
+use-local-agent-client:
+	cd tests; npm uninstall @whi/holochain-agent-client
+	cd tests; npm install --save ../../holochain-agent-client-js/
+use-npm-agent-client:
+	cd tests; npm uninstall @whi/holochain-agent-client
+	cd tests; npm install --save @whi/holochain-agent-client
+
+use-local-backdrop:
+	cd tests; npm uninstall @whi/holochain-backdrop
+	cd tests; npm install --save-dev ../../node-holochain-backdrop/
+use-npm-backdrop:
+	cd tests; npm uninstall @whi/holochain-backdrop
+	cd tests; npm install --save-dev @whi/holochain-backdrop
+
 
 MOCHA_OPTS		= -t 15000
 #
@@ -18,23 +39,23 @@ test:			test-unit	test-integration	test-e2e
 test-debug:		test-unit-debug	test-integration-debug	test-e2e-debug
 
 test-unit:		build test-setup
-	npx mocha $(MOCHA_OPTS) ./tests/unit
+	LOG_LEVEL=warn npx mocha $(MOCHA_OPTS) ./tests/unit
 test-unit-debug:	build test-setup
-	LOG_LEVEL=silly npx mocha $(MOCHA_OPTS) ./tests/unit
+	LOG_LEVEL=trace npx mocha $(MOCHA_OPTS) ./tests/unit
 
 test-integration:		build test-setup
-	npx mocha $(MOCHA_OPTS) ./tests/integration
+	LOG_LEVEL=warn npx mocha $(MOCHA_OPTS) ./tests/integration
 test-integration-debug:		build test-setup
-	LOG_LEVEL=silly npx mocha $(MOCHA_OPTS) ./tests/integration
+	LOG_LEVEL=trace npx mocha $(MOCHA_OPTS) ./tests/integration
 test-integration-debug-%:	build test-setup
-	LOG_LEVEL=silly npx mocha $(MOCHA_OPTS) ./tests/integration/test_$*.js
+	LOG_LEVEL=trace npx mocha $(MOCHA_OPTS) ./tests/integration/test_$*.js
 
 test-e2e:		prepare-package build test-setup
-	npx mocha $(MOCHA_OPTS) ./tests/e2e
+	LOG_LEVEL=warn npx mocha $(MOCHA_OPTS) ./tests/e2e
 test-e2e-debug:		prepare-package build test-setup
-	LOG_LEVEL=silly npx mocha $(MOCHA_OPTS) ./tests/e2e
+	LOG_LEVEL=trace npx mocha $(MOCHA_OPTS) ./tests/e2e
 test-e2e-debug-%:	prepare-package build test-setup
-	LOG_LEVEL=silly npx mocha $(MOCHA_OPTS) ./tests/e2e/test_$*.js
+	LOG_LEVEL=trace npx mocha $(MOCHA_OPTS) ./tests/e2e/test_$*.js
 test-setup:
 
 
@@ -58,8 +79,8 @@ clean-files-all-force:	clean-remove-chaff
 #
 prepare-package:
 	rm -f dist/*
-	FILENAME=holochain-client.js WEBPACK_MODE=development npm run build
-	npm run build
+	npx webpack
+	MODE=production npx webpack
 	gzip -kf dist/*.js
 preview-package:	clean-files test prepare-package
 	npm pack --dry-run .

@@ -1,36 +1,44 @@
-const webpack			= require('webpack');
-const TerserPlugin		= require("terser-webpack-plugin");
 
-const WEBPACK_MODE		= process.env.WEBPACK_MODE || "production";
-const FILENAME			= process.env.FILENAME || "holochain-client.prod.js";
+import webpack			from 'webpack';
+import TerserPlugin		from 'terser-webpack-plugin';
 
 
-module.exports = {
-    target: 'web',
-    mode: WEBPACK_MODE,
-    entry: [ './src/bootstrap.js' ],
-    experiments: {
-	asyncWebAssembly: true,
+const MODE			= process.env.MODE || "development";
+const FILENAME			= process.env.FILENAME || "holochain-client";
+const FILEEXT			= MODE === "production" ? "min.js" : "js";
+
+
+export default {
+    "target":	"web",
+    "mode":	MODE,
+    "entry": {
+	"main": {
+	    "import":	"./src/index.js",
+	    "filename":	`${FILENAME}.${FILEEXT}`,
+	    "library": {
+		"type":	"module",
+	    },
+	},
     },
-    resolve: {
-	mainFields: ["module", "main"],
+    "experiments": {
+	"outputModule":	true,
     },
-    output: {
-	filename:	FILENAME,
-	globalObject:	"this",
-	libraryTarget: "window",
-    },
-    stats: {
-	colors: true
-    },
-    devtool: 'source-map',
-    optimization: {
-	minimizer: [
+    "optimization": {
+	"minimizer": [
 	    new TerserPlugin({
-		terserOptions: {
-		    keep_classnames: true,
+		"terserOptions": {
+		    "keep_classnames": true,
 		},
 	    }),
 	],
     },
+    "devtool":	"source-map",
+    "stats": {
+	"colors": true,
+    },
+    "plugins": [
+        new webpack.optimize.LimitChunkCountPlugin({
+	    "maxChunks": 1,
+	}),
+    ],
 };

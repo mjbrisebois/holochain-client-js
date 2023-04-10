@@ -1,8 +1,7 @@
 
-const expect				= require('chai').expect;
+import { expect }			from 'chai';
 
-
-async function expect_reject ( cb, error, message ) {
+export async function expect_reject ( cb, error, message ) {
     let failed				= false;
     try {
 	await cb();
@@ -12,8 +11,3 @@ async function expect_reject ( cb, error, message ) {
     }
     expect( failed			).to.be.true;
 }
-
-
-module.exports = {
-    expect_reject
-};

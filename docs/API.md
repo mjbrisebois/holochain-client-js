@@ -2,114 +2,44 @@
 
 # API Reference
 
-Examples assume that the following dependencies are loaded
-```javascript
-const {
-    AdminClient,
-    AgentClient,
-
-    Connection,
-
-    AppSchema,
-    DnaSchema,
-    ZomeApi,
-
-    HoloHashTypes,
-} = require('@whi/holochain-client');
-const { HoloHash, AgentPubKey, ActionHash, EntryHash, DnaHash } = HoloHashTypes;
-```
-
-## [`new AgentClient( ... )`](./API_AgentClient.md)
-A class for communicating with Conductor's App interface with a specific Agent.
+## [`@whi/holochain-agent-client`](https://github.com/mjbrisebois/holochain-agent-client-js/blob/master/docs/API.md)
+A Javascript client for communicating with Holochain's App Interface API.
 
 
-## [`new AdminClient( ... )`](./API_AdminClient.md)
-A class for communicating with Conductor's Admin interface.
-
-
-## [`new Connection( ... )`](./API_Connection.md)
-A class for communicating with Holochain Conductor's WebSocket.
-
-
-## [`new AppSchema( ... )`](./API_AppSchema.md)
-A class for defining an App's DNA architecture.
-
-
-## [`new DnaSchema( ... )`](./API_DnaSchema.md)
-A class for defining a DNA's zome architecture.
-
-
-## [`new ZomeApi( ... )`](./API_ZomeApi.md)
-A class for defining and calling a Zome's API interface.
-
-
-
-## Failure modes
-
-Error class hierarchy
-
-- `HolochainClientError`
-  - `ConductorError`
-  - `DeserializationError`
-  - `DnaReadError`
-  - `RibosomeError`
-  - `RibosomeDeserializeError`
-  - `ActivateAppError`
-  - `ZomeCallUnauthorizedError`
-
-### `throw new ConductorError( message )`
-This error will occur when Conductor returns an error with type `internal_error`.
-
-Example
-```
-[ConductorError( IO error: ffs::IoError at path './non-existent.dna': No such file or directory (os error 2) )]
-```
-
-### `throw new DeserializationError( message )`
-This error will occur when Conductor returns an error with type `deserialization`.
-
-Example
-```
-[DeserializationError( Deserialize("invalid type: map, expected unit variant AdminRequest::ListActiveApps")) )]
-```
-
-### `throw new DnaReadError( message )`
-This error will occur when Conductor returns an error with type `dna_read_error`.
-
-### `throw new RibosomeError( message )`
-This error will occur when Conductor returns an error with type `ribosome_error`.
-
-### `throw new RibosomeDeserializeError( message, zome_call_args )`
-This error will occur when Conductor returns an error with type `ribosome_error` and the message
-includes `Wasm error while working with Ribosome: Deserialize`.
-
-### `throw new ActivateAppError( message )`
-This error will occur when Conductor returns an error with type `activate_app`.
-
-### `throw new ZomeCallUnauthorizedError( message )`
-This error will occur when Conductor returns an error with type `zome_call_unauthorized`.
+## [`@whi/holochain-admin-client`](https://github.com/mjbrisebois/holochain-admin-client-js/blob/master/docs/API.md)
+A Javascript client for communicating with Holochain's Admin Interface API.
 
 
 ## Module exports
 ```javascript
 {
+    HolochainAgentClient, // default export from @whi/holochain-agent-client
+    HolochainAdminClient, // default export from @whi/holochain-admin-client
+    logging,
+
+    // Forwarded from @whi/holochain-admin-client
     AdminClient,
+    DeprecationNotice,
+    sha512,
+
+    // Forwarded from @whi/holochain-agent-client
     AgentClient,
-
-    Connection,
-
     AppSchema,
     DnaSchema,
     ZomeApi,
+    reformat_app_info,
+    reformat_cell_id,
 
-    HoloHash: require('@whi/holo-hash').HoloHash,
-    HoloHashTypes: require('@whi/holo-hash'),
+    // Forwarded from @whi/holochain-agent-client -> @holochain/serialization
+    hashZomeCall,
 
-    // Error classes
+    // Forwarded from @whi/holochain-agent-client -> @whi/holochain-websocket
+    Connection,
+
+    PromiseTimeout,
     TimeoutError,
 
     HolochainClientError,
-
     ConductorError,
     DeserializationError,
     DnaReadError,
@@ -117,5 +47,28 @@ This error will occur when Conductor returns an error with type `zome_call_unaut
     RibosomeDeserializeError,
     ActivateAppError,
     ZomeCallUnauthorizedError,
+
+    MsgPack,
+
+    // Forwarded from @whi/holochain-agent-client -> @whi/holo-hash
+    HoloHash,
+    HoloHashTypes,
+    AnyDhtHash,
+
+    AgentPubKey,
+    EntryHash,
+    NetIdHash,
+    DhtOpHash,
+    ActionHash,
+    DnaWasmHash,
+    DnaHash,
+
+    Warning,
+    HoloHashError,
+    NoLeadingUError,
+    BadBase64Error,
+    BadSizeError,
+    BadPrefixError,
+    BadChecksumError,
 }
 ```
