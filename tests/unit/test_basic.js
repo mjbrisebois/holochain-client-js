@@ -3,10 +3,12 @@ const log				= new Logger("test-basic", process.env.LOG_LEVEL );
 
 import { expect }			from 'chai';
 import {
-    DnaHash,
     DnaSchema,
+    HoloHashes,
     logging,
 }					from '../../src/index.js';
+
+const { DnaHash }			= HoloHashes;
 
 if ( process.env.LOG_LEVEL )
     logging();

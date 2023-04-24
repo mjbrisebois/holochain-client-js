@@ -10,9 +10,11 @@ import {
     AdminClient,
     AgentClient,
 
-    HoloHash,
+    HoloHashes,
     logging,
 }					from '../../src/index.js';
+
+const { HoloHash }			= HoloHashes;
 
 if ( process.env.LOG_LEVEL === "trace" )
     logging();

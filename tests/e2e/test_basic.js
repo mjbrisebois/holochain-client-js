@@ -14,9 +14,11 @@ import { Holochain }			from '@whi/holochain-backdrop';
 import {
     AdminClient,
     AgentClient,
-    HoloHash,
+    HoloHashes,
     logging,
 }					from '../../src/index.js';
+
+const { HoloHash }			= HoloHashes;
 
 if ( process.env.LOG_LEVEL === "trace" )
     logging();
@@ -59,6 +61,7 @@ async function create_page ( url ) {
 function agent_client_tests () {
     it("should make request using AgentClient", async function () {
 	let result			= await page.evaluate(async function ( agent_hash, dna_hash, app_port ) {
+	    const { HoloHash }		= HoloHashes;
 	    const app			= new AgentClient( agent_hash, {
 		"memory": dna_hash,
 	    }, app_port );

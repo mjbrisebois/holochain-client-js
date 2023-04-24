@@ -20,55 +20,25 @@ A Javascript client for communicating with Holochain's Admin Interface API.
     // Forwarded from @whi/holochain-admin-client
     AdminClient,
     DeprecationNotice,
-    sha512,
 
     // Forwarded from @whi/holochain-agent-client
     AgentClient,
     AppSchema,
     DnaSchema,
     ZomeApi,
+
+    sha512,
+    hash_secret,
     reformat_app_info,
     reformat_cell_id,
 
-    // Forwarded from @whi/holochain-agent-client -> @holochain/serialization
+    // Forwarded from @whi/holochain-serialization
     hashZomeCall,
 
-    // Forwarded from @whi/holochain-agent-client -> @whi/holochain-websocket
-    Connection,
+    // Forwarded from @whi/holo-hash
+    HoloHashes,
 
-    PromiseTimeout,
-    TimeoutError,
-
-    HolochainClientError,
-    ConductorError,
-    DeserializationError,
-    DnaReadError,
-    RibosomeError,
-    RibosomeDeserializeError,
-    ActivateAppError,
-    ZomeCallUnauthorizedError,
-
-    MsgPack,
-
-    // Forwarded from @whi/holochain-agent-client -> @whi/holo-hash
-    HoloHash,
-    HoloHashTypes,
-    AnyDhtHash,
-
-    AgentPubKey,
-    EntryHash,
-    NetIdHash,
-    DhtOpHash,
-    ActionHash,
-    DnaWasmHash,
-    DnaHash,
-
-    Warning,
-    HoloHashError,
-    NoLeadingUError,
-    BadBase64Error,
-    BadSizeError,
-    BadPrefixError,
-    BadChecksumError,
+    // Forwarded from @whi/holochain-websocket
+    HolochainWebsocket,
 }
 ```
